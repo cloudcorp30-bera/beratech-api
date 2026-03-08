@@ -25,6 +25,7 @@ import { getGeolocation, reverseGeocode, getTimezone, getDeviceInfo, checkUptime
 import { getCryptoPrice, getCurrencyRate, shortenUrl, whoisLookup, validatePhone, getTechNews, generateGitignore, getMetadata } from "./utilities";
 import { convertRequestSchema } from "@shared/schema";
 import { searchMovies } from "./movies";
+import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDramaBoxTrending, getDramaBoxInfo, searchFlixHQ, getFlixHQInfo, discoverDramas } from "./drama";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -115,6 +116,17 @@ export async function registerRoutes(
             { path: "/api/search/lyrics", method: "GET", description: "Lyrics Search" },
             { path: "/api/search/wiki", method: "GET", description: "Wikipedia Search" },
             { path: "/api/search/movies", method: "GET", description: "Movie Search & Download (YTS)" },
+          ],
+          drama: [
+            { path: "/api/drama/search", method: "GET", description: "Search TV dramas/series (TMDb)" },
+            { path: "/api/drama/info", method: "GET", description: "Get drama info + seasons + cast (TMDb)" },
+            { path: "/api/drama/season", method: "GET", description: "Get season episodes with stream links" },
+            { path: "/api/drama/trending", method: "GET", description: "Trending dramas (global + by country)" },
+            { path: "/api/drama/discover", method: "GET", description: "Discover dramas by country/genre" },
+            { path: "/api/drama/box/trending", method: "GET", description: "DramaBox short dramas trending" },
+            { path: "/api/drama/box/info", method: "GET", description: "DramaBox drama detail + episode list" },
+            { path: "/api/drama/flixhq/search", method: "GET", description: "Search on FlixHQ (movies/series)" },
+            { path: "/api/drama/flixhq/info", method: "GET", description: "FlixHQ media info + episodes" },
           ],
           tools: [
             { path: "/api/tools/translate", method: "GET", description: "Text Translate" },
@@ -421,6 +433,111 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("movies search error:", error?.message);
       return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Movies search failed" });
+    }
+  });
+
+  // === DRAMA ENDPOINTS ===
+
+  app.get("/api/drama/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchDramas(query, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/info", async (req, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (TMDb ID)" });
+      const result = await getDramaInfo(id);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/season", async (req, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      const season = parseInt(req.query.season as string);
+      if (!id || !season) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameters: id, season" });
+      const result = await getDramaSeason(id, season);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/trending", async (req, res) => {
+    try {
+      const region = (req.query.region as string) || "KR";
+      const result = await getTrendingDramas(region);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/discover", async (req, res) => {
+    try {
+      const result = await discoverDramas({
+        with_origin_country: req.query.country as string,
+        with_genres: req.query.genre as string,
+        sort_by: req.query.sort_by as string,
+        page: parseInt(req.query.page as string) || 1,
+      });
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/box/trending", async (req, res) => {
+    try {
+      const result = await getDramaBoxTrending();
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/box/info", async (req, res) => {
+    try {
+      const id = req.query.id as string;
+      const slug = req.query.slug as string;
+      if (!id || !slug) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameters: id, slug" });
+      const result = await getDramaBoxInfo(id, slug);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/flixhq/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchFlixHQ(query, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/drama/flixhq/info", async (req, res) => {
+    try {
+      const id = req.query.id as string;
+      if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (FlixHQ media ID)" });
+      const result = await getFlixHQInfo(id);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
     }
   });
 
