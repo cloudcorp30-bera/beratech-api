@@ -26,6 +26,7 @@ import { getCryptoPrice, getCurrencyRate, shortenUrl, whoisLookup, validatePhone
 import { convertRequestSchema } from "@shared/schema";
 import { searchMovies } from "./movies";
 import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDramaBoxTrending, getDramaBoxInfo, searchFlixHQ, getFlixHQInfo, discoverDramas } from "./drama";
+import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecentlyUpdated, searchAnilist, getTrendingAnilist, getAnilistInfo, searchNyaa } from "./anime";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -127,6 +128,17 @@ export async function registerRoutes(
             { path: "/api/drama/box/info", method: "GET", description: "DramaBox drama detail + episode list" },
             { path: "/api/drama/flixhq/search", method: "GET", description: "Search on FlixHQ (movies/series)" },
             { path: "/api/drama/flixhq/info", method: "GET", description: "FlixHQ media info + episodes" },
+          ],
+          anime: [
+            { path: "/api/anime/search", method: "GET", description: "Search anime on HiAnime" },
+            { path: "/api/anime/spotlight", method: "GET", description: "HiAnime spotlight / featured anime" },
+            { path: "/api/anime/airing", method: "GET", description: "Top airing anime on HiAnime" },
+            { path: "/api/anime/popular", method: "GET", description: "Most popular anime on HiAnime" },
+            { path: "/api/anime/recent", method: "GET", description: "Recently updated anime episodes" },
+            { path: "/api/anime/anilist/search", method: "GET", description: "Search anime on AniList (metadata + covers)" },
+            { path: "/api/anime/anilist/trending", method: "GET", description: "Trending anime on AniList" },
+            { path: "/api/anime/anilist/info", method: "GET", description: "Full anime info from AniList by ID" },
+            { path: "/api/torrent/nyaa", method: "GET", description: "Search Nyaa.si anime torrents with magnet links" },
           ],
           tools: [
             { path: "/api/tools/translate", method: "GET", description: "Text Translate" },
@@ -535,6 +547,108 @@ export async function registerRoutes(
       const id = req.query.id as string;
       if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (FlixHQ media ID)" });
       const result = await getFlixHQInfo(id);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  // === ANIME ENDPOINTS ===
+
+  app.get("/api/anime/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchAnime(query, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/spotlight", async (_req, res) => {
+    try {
+      const result = await getAnimeSpotlight();
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/airing", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const result = await getTopAiring(page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/popular", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const result = await getMostPopular(page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/recent", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const result = await getRecentlyUpdated(page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/anilist/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const perPage = Math.min(parseInt(req.query.limit as string) || 20, 50);
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchAnilist(query, page, perPage);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/anilist/trending", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const perPage = Math.min(parseInt(req.query.limit as string) || 20, 50);
+      const result = await getTrendingAnilist(page, perPage);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/anilist/info", async (req, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (AniList ID)" });
+      const result = await getAnilistInfo(id);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/torrent/nyaa", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const category = (req.query.category as string) || "anime-eng";
+      const filter = (req.query.filter as string) || "no-remakes";
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchNyaa(query, category, filter, limit);
       return res.json({ status: 200, success: true, creator: "beratech", result });
     } catch (e: any) {
       return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });

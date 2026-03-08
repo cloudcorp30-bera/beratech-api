@@ -24,6 +24,8 @@ import {
   Bot,
   MapPin,
   Settings,
+  Tv,
+  Film,
 } from "lucide-react";
 
 interface EndpointInfo {
@@ -54,7 +56,9 @@ interface StatsData {
 
 const CATEGORY_META: Record<string, { icon: typeof Download; label: string; color: string }> = {
   download: { icon: Download, label: "Downloaders", color: "text-blue-500" },
-  search: { icon: Search, label: "Search", color: "text-emerald-500" },
+  search: { icon: Search, label: "Search & Movies", color: "text-emerald-500" },
+  drama: { icon: Tv, label: "Drama & Series", color: "text-pink-500" },
+  anime: { icon: Film, label: "Anime & Torrents", color: "text-violet-500" },
   tools: { icon: Wrench, label: "Tools", color: "text-amber-500" },
   developer: { icon: Code, label: "Developer Tools", color: "text-cyan-500" },
   ai: { icon: Bot, label: "AI Tools", color: "text-rose-500" },
@@ -145,6 +149,25 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/utils/gitignore": "/api/utils/gitignore?templates=node,python",
   "/api/utils/metadata": "/api/utils/metadata?url=https://github.com",
   "/api/utils/uptime": "/api/utils/uptime?url=https://google.com",
+  "/api/search/movies": "/api/search/movies?query=batman&limit=5",
+  "/api/drama/search": "/api/drama/search?query=goblin",
+  "/api/drama/info": "/api/drama/info?id=93405",
+  "/api/drama/season": "/api/drama/season?id=93405&season=1",
+  "/api/drama/trending": "/api/drama/trending?region=KR",
+  "/api/drama/discover": "/api/drama/discover?country=KR&sort_by=popularity.desc",
+  "/api/drama/box/trending": "/api/drama/box/trending",
+  "/api/drama/box/info": "/api/drama/box/info?id=42000004357&slug=watch-out-i-call-the-final-shots",
+  "/api/drama/flixhq/search": "/api/drama/flixhq/search?query=squid+game",
+  "/api/drama/flixhq/info": "/api/drama/flixhq/info?id=tv/watch-squid-game-72172",
+  "/api/anime/search": "/api/anime/search?query=naruto",
+  "/api/anime/spotlight": "/api/anime/spotlight",
+  "/api/anime/airing": "/api/anime/airing?page=1",
+  "/api/anime/popular": "/api/anime/popular?page=1",
+  "/api/anime/recent": "/api/anime/recent?page=1",
+  "/api/anime/anilist/search": "/api/anime/anilist/search?query=attack+on+titan",
+  "/api/anime/anilist/trending": "/api/anime/anilist/trending?limit=10",
+  "/api/anime/anilist/info": "/api/anime/anilist/info?id=16498",
+  "/api/torrent/nyaa": "/api/torrent/nyaa?query=one+piece&category=anime-eng&filter=trusted-only",
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
@@ -404,6 +427,74 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
   "/api/utils/uptime": [
     { key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true },
   ],
+  "/api/search/movies": [
+    { key: "query", placeholder: "Movie title (e.g. batman, inception)", required: true },
+    { key: "limit", placeholder: "Results limit (default: 20, max: 50)", required: false },
+  ],
+  "/api/drama/search": [
+    { key: "query", placeholder: "Drama/series name (e.g. goblin, squid game)", required: true },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/drama/info": [
+    { key: "id", placeholder: "TMDb TV ID (e.g. 93405 for Squid Game)", required: true },
+  ],
+  "/api/drama/season": [
+    { key: "id", placeholder: "TMDb TV ID (e.g. 93405)", required: true },
+    { key: "season", placeholder: "Season number (e.g. 1)", required: true },
+  ],
+  "/api/drama/trending": [
+    { key: "region", placeholder: "Country code: KR, JP, CN, TH, US (default: KR)", required: false },
+  ],
+  "/api/drama/discover": [
+    { key: "country", placeholder: "Country code: KR, JP, CN, TH, US", required: false },
+    { key: "genre", placeholder: "TMDb genre ID (e.g. 18=Drama, 10759=Action)", required: false },
+    { key: "sort_by", placeholder: "Sort: popularity.desc, vote_average.desc", required: false },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/drama/box/trending": [],
+  "/api/drama/box/info": [
+    { key: "id", placeholder: "DramaBox ID (e.g. 42000004357)", required: true },
+    { key: "slug", placeholder: "Drama slug (e.g. watch-out-i-call-the-final-shots)", required: true },
+  ],
+  "/api/drama/flixhq/search": [
+    { key: "query", placeholder: "Movie/series name (e.g. squid game)", required: true },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/drama/flixhq/info": [
+    { key: "id", placeholder: "FlixHQ media ID (e.g. tv/watch-squid-game-72172)", required: true },
+  ],
+  "/api/anime/search": [
+    { key: "query", placeholder: "Anime name (e.g. naruto, one piece)", required: true },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/spotlight": [],
+  "/api/anime/airing": [
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/popular": [
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/recent": [
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/anilist/search": [
+    { key: "query", placeholder: "Anime title (e.g. attack on titan)", required: true },
+    { key: "limit", placeholder: "Results per page (default: 20, max: 50)", required: false },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/anilist/trending": [
+    { key: "limit", placeholder: "Results (default: 20, max: 50)", required: false },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/anilist/info": [
+    { key: "id", placeholder: "AniList ID (e.g. 16498 for AoT)", required: true },
+  ],
+  "/api/torrent/nyaa": [
+    { key: "query", placeholder: "Anime title (e.g. one piece, demon slayer)", required: true },
+    { key: "category", placeholder: "Category: anime-eng, anime-raw, all (default: anime-eng)", required: false },
+    { key: "filter", placeholder: "Filter: all, no-remakes, trusted-only (default: no-remakes)", required: false },
+    { key: "limit", placeholder: "Limit (default: 20, max: 50)", required: false },
+  ],
 };
 
 function getEndpointParams(ep: EndpointInfo): Array<{ key: string; placeholder: string; required: boolean }> {
@@ -564,7 +655,7 @@ function EndpointTestCard({ ep }: { ep: EndpointInfo }) {
               size="sm"
               onClick={runTest}
               disabled={loading}
-              data-testid="button-run-test"
+              data-testid={`button-run-test-${ep.path.replace(/\//g, "-").slice(1)}`}
             >
               {loading ? (
                 <><Loader2 className="w-3 h-3 animate-spin" /> Testing...</>

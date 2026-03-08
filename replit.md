@@ -1,10 +1,10 @@
 # Bera API
 
 ## Overview
-A comprehensive multi-category API service with a polished web frontend. Includes YouTube/TikTok download, search capabilities, developer tools, AI-powered tools, utility tools, and photo effects. Features a GiftedTech-inspired dashboard with real-time server statistics, categorized endpoint cards, and inline API testing.
+A comprehensive multi-category API service with a polished web frontend. Includes YouTube/TikTok download, search, 75+ developer tools, AI-powered tools, movie/drama/anime endpoints, and photo effects. Features a GiftedTech-inspired dashboard with real-time server statistics, categorized endpoint cards, and inline API testing. Dark mode by default.
 
 ## Architecture
-- **Frontend**: React + Vite + TailwindCSS + shadcn/ui components (teal/cyan theme)
+- **Frontend**: React + Vite + TailwindCSS + shadcn/ui components (teal/cyan theme, dark mode default)
 - **Backend**: Express.js with scraping modules, external API integrations
 - **No database required** - stateless API service
 - **Color scheme**: Teal/cyan primary (hsl 173 80% 40%)
@@ -22,7 +22,10 @@ A comprehensive multi-category API service with a polished web frontend. Include
 - `server/utilities.ts` - Utility endpoints (crypto, currency, URL shortener, WHOIS, phone, news, gitignore, metadata)
 - `server/catbox.ts` - Shared catbox.moe upload utility for permanent image/audio hosting
 - `server/ephoto.ts` - EPhoto360 text effects (en.ephoto360.com)
-- `client/src/pages/dashboard.tsx` - Main dashboard with stats + endpoint testing
+- `server/movies.ts` - YTS movie search with torrent URLs, magnet links, and vidsrc.me/vidsrc.to streaming URLs
+- `server/drama.ts` - TMDb drama search/info/season/trending/discover + DramaBox HTML scraping + FlixHQ via consumet (9 endpoints)
+- `server/anime.ts` - HiAnime (search, spotlight, top airing, popular, recently updated) + AniList GraphQL (search, trending, info) + Nyaa RSS torrents with magnet links (9 endpoints)
+- `client/src/pages/dashboard.tsx` - Main dashboard with stats + endpoint testing (categories: download, search, drama, anime, tools, developer, ai, location, utilities, ephoto360)
 - `client/src/pages/docs.tsx` - API documentation with inline testing
 - `client/src/pages/tools.tsx` - Interactive tools page (translate, github, quote, screenshot)
 - `client/src/pages/photo.tsx` - Photo effects generator page
