@@ -27,6 +27,7 @@ import { convertRequestSchema } from "@shared/schema";
 import { searchMovies } from "./movies";
 import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDramaBoxTrending, getDramaBoxInfo, searchFlixHQ, getFlixHQInfo, discoverDramas } from "./drama";
 import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecentlyUpdated, searchAnilist, getTrendingAnilist, getAnilistInfo, searchNyaa } from "./anime";
+import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -139,6 +140,12 @@ export async function registerRoutes(
             { path: "/api/anime/anilist/trending", method: "GET", description: "Trending anime on AniList" },
             { path: "/api/anime/anilist/info", method: "GET", description: "Full anime info from AniList by ID" },
             { path: "/api/torrent/nyaa", method: "GET", description: "Search Nyaa.si anime torrents with magnet links" },
+            { path: "/api/episode/stream", method: "GET", description: "Multi-provider stream embed URLs for movie/TV/anime episodes" },
+            { path: "/api/anime/jikan/search", method: "GET", description: "Search anime via MAL/Jikan API (full metadata + episode counts)" },
+            { path: "/api/anime/jikan/info", method: "GET", description: "Full anime info from MAL by ID" },
+            { path: "/api/anime/jikan/episodes", method: "GET", description: "Anime episode list with stream URLs (via MAL/Jikan)" },
+            { path: "/api/anime/jikan/top", method: "GET", description: "Top anime on MAL (airing/upcoming/bypopularity)" },
+            { path: "/api/anime/jikan/season", method: "GET", description: "Currently airing seasonal anime (MAL)" },
           ],
           tools: [
             { path: "/api/tools/translate", method: "GET", description: "Text Translate" },
@@ -649,6 +656,85 @@ export async function registerRoutes(
       const limit = Math.min(parseInt(req.query.limit as string) || 20, 50);
       if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
       const result = await searchNyaa(query, category, filter, limit);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  // === EPISODE STREAMING & DOWNLOAD ENDPOINTS ===
+
+  app.get("/api/episode/stream", (req, res) => {
+    try {
+      const type = (req.query.type as string) as "movie" | "tv" | "anime";
+      if (!type || !["movie", "tv", "anime"].includes(type)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing/invalid parameter: type (must be movie, tv, or anime)" });
+      }
+      const tmdb_id = req.query.tmdb_id as string;
+      const imdb_id = req.query.imdb_id as string;
+      const anilist_id = req.query.anilist_id as string;
+      const mal_id = req.query.mal_id as string;
+      const season = parseInt(req.query.season as string) || 1;
+      const episode = parseInt(req.query.episode as string) || 1;
+      const result = getEpisodeStreamUrls({ type, tmdb_id, imdb_id, anilist_id, mal_id, season, episode });
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/jikan/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = Math.min(parseInt(req.query.limit as string) || 20, 25);
+      if (!query) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      const result = await searchJikanAnime(query, page, limit);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/jikan/info", async (req, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (MAL ID)" });
+      const result = await getJikanAnimeInfo(id);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/jikan/episodes", async (req, res) => {
+    try {
+      const id = parseInt(req.query.id as string);
+      const page = parseInt(req.query.page as string) || 1;
+      if (!id) return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: id (MAL anime ID)" });
+      const result = await getJikanAnimeEpisodes(id, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/jikan/top", async (req, res) => {
+    try {
+      const type = (req.query.type as string) || "tv";
+      const filter = (req.query.filter as string) || "airing";
+      const page = parseInt(req.query.page as string) || 1;
+      const result = await getJikanTopAnime(type, filter, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (e: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });
+    }
+  });
+
+  app.get("/api/anime/jikan/season", async (req, res) => {
+    try {
+      const page = parseInt(req.query.page as string) || 1;
+      const result = await getJikanSeasonNow(page);
       return res.json({ status: 200, success: true, creator: "beratech", result });
     } catch (e: any) {
       return res.status(500).json({ status: 500, success: false, creator: "beratech", error: e.message });

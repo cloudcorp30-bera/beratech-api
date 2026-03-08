@@ -168,6 +168,12 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/anime/anilist/trending": "/api/anime/anilist/trending?limit=10",
   "/api/anime/anilist/info": "/api/anime/anilist/info?id=16498",
   "/api/torrent/nyaa": "/api/torrent/nyaa?query=one+piece&category=anime-eng&filter=trusted-only",
+  "/api/episode/stream": "/api/episode/stream?type=tv&tmdb_id=93405&season=1&episode=1",
+  "/api/anime/jikan/search": "/api/anime/jikan/search?query=attack+on+titan",
+  "/api/anime/jikan/info": "/api/anime/jikan/info?id=20",
+  "/api/anime/jikan/episodes": "/api/anime/jikan/episodes?id=20&page=1",
+  "/api/anime/jikan/top": "/api/anime/jikan/top?type=tv&filter=airing",
+  "/api/anime/jikan/season": "/api/anime/jikan/season",
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
@@ -494,6 +500,34 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "category", placeholder: "Category: anime-eng, anime-raw, all (default: anime-eng)", required: false },
     { key: "filter", placeholder: "Filter: all, no-remakes, trusted-only (default: no-remakes)", required: false },
     { key: "limit", placeholder: "Limit (default: 20, max: 50)", required: false },
+  ],
+  "/api/episode/stream": [
+    { key: "type", placeholder: "Type: movie, tv, or anime", required: true },
+    { key: "tmdb_id", placeholder: "TMDb ID (for movie/tv, e.g. 93405 for Squid Game)", required: false },
+    { key: "imdb_id", placeholder: "IMDB ID (e.g. tt9366354)", required: false },
+    { key: "anilist_id", placeholder: "AniList ID (for anime, e.g. 16498 for AoT)", required: false },
+    { key: "season", placeholder: "Season number (default: 1, for tv)", required: false },
+    { key: "episode", placeholder: "Episode number (default: 1)", required: false },
+  ],
+  "/api/anime/jikan/search": [
+    { key: "query", placeholder: "Anime title (e.g. naruto, attack on titan)", required: true },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+    { key: "limit", placeholder: "Results per page (default: 20, max: 25)", required: false },
+  ],
+  "/api/anime/jikan/info": [
+    { key: "id", placeholder: "MAL (MyAnimeList) ID (e.g. 20 for Naruto)", required: true },
+  ],
+  "/api/anime/jikan/episodes": [
+    { key: "id", placeholder: "MAL ID (e.g. 20 for Naruto)", required: true },
+    { key: "page", placeholder: "Page number (100 episodes per page, default: 1)", required: false },
+  ],
+  "/api/anime/jikan/top": [
+    { key: "type", placeholder: "Type: tv, movie, ova, special, ona, music (default: tv)", required: false },
+    { key: "filter", placeholder: "Filter: airing, upcoming, bypopularity, favorite (default: airing)", required: false },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/anime/jikan/season": [
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
 };
 
