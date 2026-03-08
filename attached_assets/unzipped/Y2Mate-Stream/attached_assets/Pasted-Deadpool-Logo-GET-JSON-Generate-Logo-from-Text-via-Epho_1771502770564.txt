@@ -1,0 +1,194 @@
+Deadpool Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Born Pink Album
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Thor Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Pencil Sketch Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+3D Wood Text
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Team Logo B&W
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Graffiti Girl
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Graffiti Wall
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Glitter Text
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Vintage Light Bulb
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Floral Banner
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Gun Gaming Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Mountain Logo B&W
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Space 3D Text
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+PornHub Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Letter Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+3D Stone Text
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+TikTok Text
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Life Buoys
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Gradient Logo 3D
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Text Logo Maker
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Avengers Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Marvel Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+3D Metal Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Wolf Galaxy Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Mascot Avatar
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Icon Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Metallic Glass
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Football Shirt
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Polygon Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2	
+
+Active
+
+Test
+Triple Text Effects (2)
+ENDPOINT	DESCRIPTION	REQUIRED	STATUS
+Wings Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2, text3	
+
+Active
+
+Test
+Sci-Fi Logo
+GET, JSON	Generate Logo from Text via Ephoto360.com	apikey, text1, text2, text3	
+
+Active
+
+Test
