@@ -1859,22 +1859,17 @@ export async function registerRoutes(
 
       const media = await streamMedia(query, type as any, episode, season);
 
-      let downloadUrl: string;
-      if (media.torrent_url) {
-        downloadUrl = media.torrent_url;
-      } else {
-        const dlId = createDownloadId();
-        downloadStore.set(dlId, {
-          externalUrl: media.external_url,
-          title: media.title,
-          format: "mp4",
-          expiresAt: Date.now() + 10 * 60 * 1000,
-          redirect: true,
-        });
-        const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
-        const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
-        downloadUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
-      }
+      const dlId = createDownloadId();
+      downloadStore.set(dlId, {
+        externalUrl: media.external_url,
+        title: media.title,
+        format: "mp4",
+        expiresAt: Date.now() + 10 * 60 * 1000,
+        redirect: true,
+      });
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
+      const downloadUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
 
       return res.json({
         status: 200, success: true, creator: "beratech",
