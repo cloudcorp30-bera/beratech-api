@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import axios from "axios";
+import FormData from "form-data";
 import { uploadToCatbox } from "./catbox";
 
 const deepseek = new OpenAI({
@@ -161,26 +163,28 @@ export async function aiImageGenerate(prompt: string, size?: string): Promise<{
   size: string;
   model: string;
 }> {
-  const validSize = (size === "512x512" || size === "256x256") ? size : "1024x1024";
+  const form = new FormData();
+  form.append("text", prompt);
 
-  const response = await openai.images.generate({
-    model: "gpt-image-1",
-    prompt,
-    n: 1,
-    size: validSize as "1024x1024" | "512x512" | "256x256",
+  const response = await axios.post("https://api.deepai.org/api/text2img", form, {
+    headers: {
+      "api-key": process.env.DEEPAI_API_KEY || "",
+      ...form.getHeaders(),
+    },
   });
 
-  const base64 = response.data?.[0]?.b64_json ?? "";
-  if (!base64) throw new Error("No image data returned from AI model");
-  const imageBuffer = Buffer.from(base64, "base64");
+  const outputUrl: string = response.data?.output_url;
+  if (!outputUrl) throw new Error("No image returned from DeepAI");
 
+  const imgRes = await axios.get(outputUrl, { responseType: "arraybuffer" });
+  const imageBuffer = Buffer.from(imgRes.data);
   const imageUrl = await uploadToCatbox(imageBuffer, "image.png");
 
   return {
     image_url: imageUrl,
     prompt,
-    size: validSize,
-    model: "gpt-image-1",
+    size: size || "1024x1024",
+    model: "deepai/text2img",
   };
 }
 
