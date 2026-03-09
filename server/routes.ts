@@ -1825,6 +1825,23 @@ export async function registerRoutes(
       }
 
       const result = await searchMedia(query, type as any, page);
+
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
+      const baseUrl = `${protocol}://${host}`;
+
+      result.results = result.results.map((item: any) => {
+        const dlId = createDownloadId();
+        downloadStore.set(dlId, {
+          externalUrl: item.stream_url,
+          title: item.title,
+          format: "mp4",
+          expiresAt: Date.now() + 10 * 60 * 1000,
+          redirect: true,
+        });
+        return { ...item, download_url: `${baseUrl}/dl/cnv/mp4/${dlId}` };
+      });
+
       return res.json({ status: 200, success: true, creator: "beratech", result });
     } catch (error: any) {
       console.error("media/search error:", error?.message);
