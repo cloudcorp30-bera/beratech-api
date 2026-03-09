@@ -1,6 +1,11 @@
 import OpenAI from "openai";
 import { uploadToCatbox } from "./catbox";
 
+const deepseek = new OpenAI({
+  apiKey: process.env.DEEPSEEK_API_KEY || "dummy-key-to-prevent-crash",
+  baseURL: "https://api.deepseek.com",
+});
+
 const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY || process.env.OPENAI_API_KEY || "dummy-key-to-prevent-crash",
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
@@ -15,10 +20,10 @@ export async function aiChat(prompt: string, systemPrompt?: string): Promise<{
   if (systemPrompt) messages.push({ role: "system", content: systemPrompt });
   messages.push({ role: "user", content: prompt });
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages,
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   return {
@@ -40,13 +45,13 @@ export async function aiSummarize(text: string, maxLength?: number): Promise<{
   model: string;
 }> {
   const lengthInstruction = maxLength ? ` Keep the summary under ${maxLength} words.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a precise text summarizer. Provide clear, concise summaries that capture the key points.${lengthInstruction}` },
       { role: "user", content: `Summarize the following text:\n\n${text}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const summary = response.choices[0]?.message?.content || "";
@@ -66,13 +71,13 @@ export async function aiCodeGenerate(prompt: string, language?: string): Promise
   model: string;
 }> {
   const langHint = language ? ` Write the code in ${language}.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are an expert programmer. Generate clean, well-commented code.${langHint} Respond in JSON format with keys: "code" (the code), "language" (the programming language used), "explanation" (brief explanation of what the code does). Return only valid JSON.` },
       { role: "user", content: prompt },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -101,13 +106,13 @@ export async function aiTranslate(text: string, targetLang: string, sourceLang?:
   model: string;
 }> {
   const sourceInstruction = sourceLang ? `from ${sourceLang} ` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a professional translator. Translate the text ${sourceInstruction}to ${targetLang}. Preserve the original tone, style, and formatting. Return ONLY the translated text, nothing else.` },
       { role: "user", content: text },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   return {
@@ -133,13 +138,13 @@ export async function aiAnalyze(text: string, analysisType?: string): Promise<{
 
   const instruction = typeInstructions[type] || typeInstructions.general;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a text analysis expert. ${instruction} Return only valid JSON.` },
       { role: "user", content: text },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -187,13 +192,13 @@ export async function aiExplainCode(code: string, language?: string): Promise<{
   model: string;
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are an expert code explainer.${langHint} Return a JSON object with: "explanation" (overview), "language" (detected language), "complexity" (simple/moderate/complex), "line_by_line" (array of {line, code, explanation} for key lines). Return only valid JSON.` },
       { role: "user", content: `Explain this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -225,13 +230,13 @@ export async function aiDebugCode(code: string, error?: string, language?: strin
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
   const errorHint = error ? ` The following error was reported: "${error}".` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are an expert code debugger.${langHint}${errorHint} Analyze the code for bugs and issues. Return a JSON object with: "bugs" (array of {line, issue, severity, fix}), "fixed_code" (the corrected code), "summary" (brief summary of issues found). Return only valid JSON.` },
       { role: "user", content: `Debug this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -262,13 +267,13 @@ export async function aiReviewCode(code: string, language?: string): Promise<{
   model: string;
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a senior code reviewer.${langHint} Review the code for quality, best practices, and potential issues. Return a JSON object with: "score" (0-100), "grade" (A/B/C/D/F), "issues" (array of {type, severity, description, suggestion}), "strengths" (array of strings), "improvements" (array of strings). Return only valid JSON.` },
       { role: "user", content: `Review this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -310,13 +315,13 @@ export async function aiCommitMessage(diff: string, style?: string): Promise<{
   };
   const instruction = styleInstructions[commitStyle] || styleInstructions.conventional;
 
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a git commit message generator. ${instruction} Return a JSON object with: "message" (the full commit message), "type" (commit type like feat/fix/etc), "scope" (affected scope), "description" (short description), "body" (detailed body if applicable). Return only valid JSON.` },
       { role: "user", content: `Generate a commit message for this diff:\n\n${diff}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -351,13 +356,13 @@ export async function aiUnitTest(code: string, language?: string, framework?: st
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
   const frameworkHint = framework ? ` Use the ${framework} testing framework.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a test engineer.${langHint}${frameworkHint} Generate comprehensive unit tests for the given code. Return a JSON object with: "tests" (the test code as a string), "language" (programming language), "framework" (testing framework used), "test_count" (number of test cases). Return only valid JSON.` },
       { role: "user", content: `Generate unit tests for this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -390,13 +395,13 @@ export async function aiSqlGenerate(prompt: string, dialect?: string, schema?: s
 }> {
   const dialectHint = dialect ? ` Use ${dialect} SQL dialect.` : "";
   const schemaHint = schema ? ` The database schema is:\n${schema}` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are an SQL expert.${dialectHint}${schemaHint} Convert natural language to SQL queries. Return a JSON object with: "sql" (the SQL query), "dialect" (SQL dialect used), "explanation" (what the query does), "tables_referenced" (array of table names used). Return only valid JSON.` },
       { role: "user", content: prompt },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -428,13 +433,13 @@ export async function aiRegexGenerate(description: string, flavor?: string): Pro
   model: string;
 }> {
   const flavorHint = flavor ? ` Use ${flavor} regex flavor.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a regex expert.${flavorHint} Convert natural language descriptions to regular expressions. Return a JSON object with: "regex" (the regular expression pattern), "flags" (regex flags like g, i, m), "explanation" (step-by-step breakdown of the regex), "examples" (object with "match" array of strings that should match and "no_match" array of strings that should not match). Return only valid JSON.` },
       { role: "user", content: description },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -465,13 +470,13 @@ export async function aiDocstring(code: string, language?: string, style?: strin
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
   const styleHint = style ? ` Use ${style} documentation style.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a documentation expert.${langHint}${styleHint} Generate comprehensive docstrings and documentation for the given code. Return a JSON object with: "documented_code" (the full code with docstrings added), "docstrings" (array of {function_name, docstring} for each function/method). Return only valid JSON.` },
       { role: "user", content: `Add documentation to this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -499,13 +504,13 @@ export async function aiRefactor(code: string, language?: string, goal?: string)
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
   const goalHint = goal ? ` Focus on: ${goal}.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a code refactoring expert.${langHint}${goalHint} Refactor the given code to improve its quality, readability, and maintainability. Return a JSON object with: "refactored_code" (the improved code), "changes" (array of {description, before, after} for each change made), "improvements" (array of strings describing improvements). Return only valid JSON.` },
       { role: "user", content: `Refactor this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -537,13 +542,13 @@ export async function aiComplexity(code: string, language?: string): Promise<{
   model: string;
 }> {
   const langHint = language ? ` The code is written in ${language}.` : "";
-  const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const response = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a code complexity analyst.${langHint} Analyze the code's complexity including time and space complexity, cyclomatic complexity, and identify hotspots. Return a JSON object with: "overall_complexity" (low/medium/high), "time_complexity" (Big O notation), "space_complexity" (Big O notation), "cyclomatic_complexity" (number), "suggestions" (array of optimization suggestions), "hotspots" (array of {function_name, complexity, suggestion}). Return only valid JSON.` },
       { role: "user", content: `Analyze the complexity of this code:\n\n${code}` },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const content = response.choices[0]?.message?.content || "{}";
@@ -617,13 +622,13 @@ export async function aiVoiceTranslate(text: string, targetLang: string, voice?:
   model: string;
 }> {
   const sourceInstruction = sourceLang ? `from ${sourceLang} ` : "";
-  const translationResponse = await openai.chat.completions.create({
-    model: "gpt-4o-mini",
+  const translationResponse = await deepseek.chat.completions.create({
+    model: "deepseek-chat",
     messages: [
       { role: "system", content: `You are a professional translator. Translate the text ${sourceInstruction}to ${targetLang}. Preserve the original tone, style, and formatting. Return ONLY the translated text, nothing else.` },
       { role: "user", content: text },
     ],
-    max_completion_tokens: 8192,
+    max_tokens: 8192,
   });
 
   const translatedText = translationResponse.choices[0]?.message?.content || "";
@@ -648,6 +653,6 @@ export async function aiVoiceTranslate(text: string, targetLang: string, voice?:
     target_language: targetLang,
     audio_url: audioUrl,
     voice: selectedVoice,
-    model: "gpt-4o-mini",
+    model: "deepseek-chat",
   };
 }
