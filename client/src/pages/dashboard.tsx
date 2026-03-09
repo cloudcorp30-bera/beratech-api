@@ -24,14 +24,11 @@ import {
   Bot,
   MapPin,
   Settings,
-  Tv,
-  Film,
   Globe,
   Github,
   Twitter,
   Star,
   Cpu,
-  Radio,
 } from "lucide-react";
 
 interface EndpointInfo {
@@ -61,11 +58,9 @@ interface StatsData {
 }
 
 const CATEGORY_META: Record<string, { icon: typeof Download; label: string; gradient: string; border: string; badge: string }> = {
-  media:     { icon: Radio,    label: "Unified Media",       gradient: "from-indigo-500/20 to-violet-500/10", border: "border-indigo-500/30", badge: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" },
   download:  { icon: Download, label: "Downloaders",         gradient: "from-blue-500/20 to-sky-500/10",     border: "border-blue-500/30",   badge: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  search:    { icon: Search,   label: "Search & Movies",     gradient: "from-emerald-500/20 to-teal-500/10", border: "border-emerald-500/30", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  drama:     { icon: Tv,       label: "Drama & Series",      gradient: "from-pink-500/20 to-rose-500/10",    border: "border-pink-500/30",   badge: "bg-pink-500/15 text-pink-400 border-pink-500/30" },
-  anime:     { icon: Film,     label: "Anime & Torrents",    gradient: "from-violet-500/20 to-purple-500/10",border: "border-violet-500/30", badge: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
+  search:    { icon: Search,   label: "Search",              gradient: "from-emerald-500/20 to-teal-500/10", border: "border-emerald-500/30", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  anime:     { icon: Zap,      label: "Anime & Torrents",    gradient: "from-violet-500/20 to-purple-500/10",border: "border-violet-500/30", badge: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
   tools:     { icon: Wrench,   label: "Tools",               gradient: "from-amber-500/20 to-yellow-500/10", border: "border-amber-500/30",  badge: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
   developer: { icon: Code,     label: "Developer Tools",     gradient: "from-cyan-500/20 to-sky-500/10",     border: "border-cyan-500/30",   badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30" },
   ai:        { icon: Bot,      label: "AI Tools",            gradient: "from-rose-500/20 to-red-500/10",     border: "border-rose-500/30",   badge: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
@@ -75,8 +70,6 @@ const CATEGORY_META: Record<string, { icon: typeof Download; label: string; grad
 };
 
 const EXAMPLE_URLS: Record<string, string> = {
-  "/api/media/search": "/api/media/search?query=batman&type=all",
-  "/api/media/stream": "/api/media/stream?query=batman&type=movie",
   "/api/download/ytmp3": "/api/download/ytmp3?url=https://youtu.be/dQw4w9WgXcQ&quality=128kbps",
   "/api/download/ytmp4": "/api/download/ytmp4?url=https://youtu.be/dQw4w9WgXcQ&quality=720p",
   "/api/download/tiktok": "/api/download/tiktok?url=https://www.tiktok.com/@user/video/1234567890",
@@ -158,16 +151,6 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/utils/gitignore": "/api/utils/gitignore?templates=node,python",
   "/api/utils/metadata": "/api/utils/metadata?url=https://github.com",
   "/api/utils/uptime": "/api/utils/uptime?url=https://google.com",
-  "/api/search/movies": "/api/search/movies?query=batman&limit=5",
-  "/api/drama/search": "/api/drama/search?query=goblin",
-  "/api/drama/info": "/api/drama/info?id=93405",
-  "/api/drama/season": "/api/drama/season?id=93405&season=1",
-  "/api/drama/trending": "/api/drama/trending?region=KR",
-  "/api/drama/discover": "/api/drama/discover?country=KR&sort_by=popularity.desc",
-  "/api/drama/box/trending": "/api/drama/box/trending",
-  "/api/drama/box/info": "/api/drama/box/info?id=42000004357&slug=watch-out-i-call-the-final-shots",
-  "/api/drama/flixhq/search": "/api/drama/flixhq/search?query=squid+game",
-  "/api/drama/flixhq/info": "/api/drama/flixhq/info?id=tv/watch-squid-game-72172",
   "/api/anime/search": "/api/anime/search?query=naruto",
   "/api/anime/spotlight": "/api/anime/spotlight",
   "/api/anime/airing": "/api/anime/airing?page=1",
@@ -186,17 +169,6 @@ const EXAMPLE_URLS: Record<string, string> = {
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
-  "/api/media/search": [
-    { key: "query", placeholder: "Search query (e.g. batman, naruto, squid game)", required: true },
-    { key: "type", placeholder: "Type: all, movie, anime, tv (default: all)", required: false },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/media/stream": [
-    { key: "query", placeholder: "Title to stream (e.g. batman, naruto, squid game)", required: true },
-    { key: "type", placeholder: "Type: movie, anime, tv (default: movie)", required: false },
-    { key: "episode", placeholder: "Episode number (default: 1, for anime/tv)", required: false },
-    { key: "season", placeholder: "Season number (default: 1, for tv)", required: false },
-  ],
   "/api/download/ytmp3": [
     { key: "url", placeholder: "YouTube URL (e.g. https://youtu.be/dQw4w9WgXcQ)", required: true },
     { key: "quality", placeholder: "Quality (128kbps, 320kbps)", required: false },
@@ -429,36 +401,6 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
   "/api/utils/gitignore": [{ key: "templates", placeholder: "Templates (e.g. node,python,vscode)", required: true }],
   "/api/utils/metadata": [{ key: "url", placeholder: "Website URL to scrape metadata from", required: true }],
   "/api/utils/uptime": [{ key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true }],
-  "/api/search/movies": [
-    { key: "query", placeholder: "Movie title (e.g. batman, inception)", required: true },
-    { key: "limit", placeholder: "Results limit (default: 20, max: 50)", required: false },
-  ],
-  "/api/drama/search": [
-    { key: "query", placeholder: "Drama/series name (e.g. goblin, squid game)", required: true },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/drama/info": [{ key: "id", placeholder: "TMDb TV ID (e.g. 93405 for Squid Game)", required: true }],
-  "/api/drama/season": [
-    { key: "id", placeholder: "TMDb TV ID (e.g. 93405)", required: true },
-    { key: "season", placeholder: "Season number (e.g. 1)", required: true },
-  ],
-  "/api/drama/trending": [{ key: "region", placeholder: "Country code: KR, JP, CN, TH, US (default: KR)", required: false }],
-  "/api/drama/discover": [
-    { key: "country", placeholder: "Country code: KR, JP, CN, TH, US", required: false },
-    { key: "genre", placeholder: "TMDb genre ID (e.g. 18=Drama, 10759=Action)", required: false },
-    { key: "sort_by", placeholder: "Sort: popularity.desc, vote_average.desc", required: false },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/drama/box/trending": [],
-  "/api/drama/box/info": [
-    { key: "id", placeholder: "DramaBox ID (e.g. 42000004357)", required: true },
-    { key: "slug", placeholder: "Drama slug (e.g. watch-out-i-call-the-final-shots)", required: true },
-  ],
-  "/api/drama/flixhq/search": [
-    { key: "query", placeholder: "Movie/series name (e.g. squid game)", required: true },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/drama/flixhq/info": [{ key: "id", placeholder: "FlixHQ media ID (e.g. tv/watch-squid-game-72172)", required: true }],
   "/api/anime/search": [
     { key: "query", placeholder: "Anime name (e.g. naruto, one piece)", required: true },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
@@ -778,7 +720,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-sm text-white/50 mb-3">
-              Building high-performance REST APIs with 75+ tools, AI integrations, media streaming, and developer utilities — all in one platform.
+              Building high-performance REST APIs with 75+ tools, AI integrations, anime search, and developer utilities — all in one platform.
             </p>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5 text-xs text-white/40">

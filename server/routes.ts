@@ -123,10 +123,6 @@ export async function registerRoutes(
         api_status: "online",
         response_rate: `${(Math.random() * 50 + 80).toFixed(2)}ms`,
         endpoints: {
-          media: [
-            { path: "/api/media/search", method: "GET", description: "Unified media search — movies, anime & TV series (YTS + MAL + TMDb)" },
-            { path: "/api/media/stream", method: "GET", description: "Unified stream & download — any movie, anime episode or TV series (returns download_url)" },
-          ],
           download: [
             { path: "/api/download/ytmp3", method: "GET", description: "YouTube to MP3" },
             { path: "/api/download/ytmp4", method: "GET", description: "YouTube to MP4" },
@@ -136,17 +132,6 @@ export async function registerRoutes(
             { path: "/api/search/yts", method: "GET", description: "YouTube Search" },
             { path: "/api/search/lyrics", method: "GET", description: "Lyrics Search" },
             { path: "/api/search/wiki", method: "GET", description: "Wikipedia Search" },
-          ],
-          drama: [
-            { path: "/api/drama/search", method: "GET", description: "Search TV dramas/series (TMDb)" },
-            { path: "/api/drama/info", method: "GET", description: "Get drama info + seasons + cast (TMDb)" },
-            { path: "/api/drama/season", method: "GET", description: "Get season episodes with stream links" },
-            { path: "/api/drama/trending", method: "GET", description: "Trending dramas (global + by country)" },
-            { path: "/api/drama/discover", method: "GET", description: "Discover dramas by country/genre" },
-            { path: "/api/drama/box/trending", method: "GET", description: "DramaBox short dramas trending" },
-            { path: "/api/drama/box/info", method: "GET", description: "DramaBox drama detail + episode list" },
-            { path: "/api/drama/flixhq/search", method: "GET", description: "Search on FlixHQ (movies/series)" },
-            { path: "/api/drama/flixhq/info", method: "GET", description: "FlixHQ media info + episodes" },
           ],
           anime: [
             { path: "/api/anime/search", method: "GET", description: "Search anime on HiAnime" },
