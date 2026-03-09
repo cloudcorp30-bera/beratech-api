@@ -60,7 +60,6 @@ interface StatsData {
 const CATEGORY_META: Record<string, { icon: typeof Download; label: string; gradient: string; border: string; badge: string }> = {
   download:  { icon: Download, label: "Downloaders",         gradient: "from-blue-500/20 to-sky-500/10",     border: "border-blue-500/30",   badge: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
   search:    { icon: Search,   label: "Search",              gradient: "from-emerald-500/20 to-teal-500/10", border: "border-emerald-500/30", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  anime:     { icon: Zap,      label: "Anime & Torrents",    gradient: "from-violet-500/20 to-purple-500/10",border: "border-violet-500/30", badge: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
   tools:     { icon: Wrench,   label: "Tools",               gradient: "from-amber-500/20 to-yellow-500/10", border: "border-amber-500/30",  badge: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
   developer: { icon: Code,     label: "Developer Tools",     gradient: "from-cyan-500/20 to-sky-500/10",     border: "border-cyan-500/30",   badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30" },
   ai:        { icon: Bot,      label: "AI Tools",            gradient: "from-rose-500/20 to-red-500/10",     border: "border-rose-500/30",   badge: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
@@ -151,21 +150,6 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/utils/gitignore": "/api/utils/gitignore?templates=node,python",
   "/api/utils/metadata": "/api/utils/metadata?url=https://github.com",
   "/api/utils/uptime": "/api/utils/uptime?url=https://google.com",
-  "/api/anime/search": "/api/anime/search?query=naruto",
-  "/api/anime/spotlight": "/api/anime/spotlight",
-  "/api/anime/airing": "/api/anime/airing?page=1",
-  "/api/anime/popular": "/api/anime/popular?page=1",
-  "/api/anime/recent": "/api/anime/recent?page=1",
-  "/api/anime/anilist/search": "/api/anime/anilist/search?query=attack+on+titan",
-  "/api/anime/anilist/trending": "/api/anime/anilist/trending?limit=10",
-  "/api/anime/anilist/info": "/api/anime/anilist/info?id=16498",
-  "/api/torrent/nyaa": "/api/torrent/nyaa?query=one+piece&category=anime-eng&filter=trusted-only",
-  "/api/episode/stream": "/api/episode/stream?type=tv&tmdb_id=93405&season=1&episode=1",
-  "/api/anime/jikan/search": "/api/anime/jikan/search?query=attack+on+titan",
-  "/api/anime/jikan/info": "/api/anime/jikan/info?id=20",
-  "/api/anime/jikan/episodes": "/api/anime/jikan/episodes?id=20&page=1",
-  "/api/anime/jikan/top": "/api/anime/jikan/top?type=tv&filter=airing",
-  "/api/anime/jikan/season": "/api/anime/jikan/season",
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
@@ -401,54 +385,6 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
   "/api/utils/gitignore": [{ key: "templates", placeholder: "Templates (e.g. node,python,vscode)", required: true }],
   "/api/utils/metadata": [{ key: "url", placeholder: "Website URL to scrape metadata from", required: true }],
   "/api/utils/uptime": [{ key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true }],
-  "/api/anime/search": [
-    { key: "query", placeholder: "Anime name (e.g. naruto, one piece)", required: true },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/spotlight": [],
-  "/api/anime/airing": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
-  "/api/anime/popular": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
-  "/api/anime/recent": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
-  "/api/anime/anilist/search": [
-    { key: "query", placeholder: "Anime title (e.g. attack on titan)", required: true },
-    { key: "limit", placeholder: "Results per page (default: 20, max: 50)", required: false },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/anilist/trending": [
-    { key: "limit", placeholder: "Results (default: 20, max: 50)", required: false },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/anilist/info": [{ key: "id", placeholder: "AniList ID (e.g. 16498 for AoT)", required: true }],
-  "/api/torrent/nyaa": [
-    { key: "query", placeholder: "Anime title (e.g. one piece, demon slayer)", required: true },
-    { key: "category", placeholder: "Category: anime-eng, anime-raw, all (default: anime-eng)", required: false },
-    { key: "filter", placeholder: "Filter: all, no-remakes, trusted-only (default: no-remakes)", required: false },
-    { key: "limit", placeholder: "Limit (default: 20, max: 50)", required: false },
-  ],
-  "/api/episode/stream": [
-    { key: "type", placeholder: "Type: movie, tv, or anime", required: true },
-    { key: "tmdb_id", placeholder: "TMDb ID (for movie/tv, e.g. 93405 for Squid Game)", required: false },
-    { key: "imdb_id", placeholder: "IMDB ID (e.g. tt9366354)", required: false },
-    { key: "anilist_id", placeholder: "AniList ID (for anime, e.g. 16498 for AoT)", required: false },
-    { key: "season", placeholder: "Season number (default: 1, for tv)", required: false },
-    { key: "episode", placeholder: "Episode number (default: 1)", required: false },
-  ],
-  "/api/anime/jikan/search": [
-    { key: "query", placeholder: "Anime title (e.g. naruto, attack on titan)", required: true },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-    { key: "limit", placeholder: "Results per page (default: 20, max: 25)", required: false },
-  ],
-  "/api/anime/jikan/info": [{ key: "id", placeholder: "MAL (MyAnimeList) ID (e.g. 20 for Naruto)", required: true }],
-  "/api/anime/jikan/episodes": [
-    { key: "id", placeholder: "MAL ID (e.g. 20 for Naruto)", required: true },
-    { key: "page", placeholder: "Page number (100 episodes per page, default: 1)", required: false },
-  ],
-  "/api/anime/jikan/top": [
-    { key: "type", placeholder: "Type: tv, movie, ova, special, ona, music (default: tv)", required: false },
-    { key: "filter", placeholder: "Filter: airing, upcoming, bypopularity, favorite (default: airing)", required: false },
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/jikan/season": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
 };
 
 function getEndpointParams(ep: EndpointInfo): Array<{ key: string; placeholder: string; required: boolean }> {
@@ -720,7 +656,7 @@ export default function Dashboard() {
               </span>
             </div>
             <p className="text-sm text-white/50 mb-3">
-              Building high-performance REST APIs with 75+ tools, AI integrations, anime search, and developer utilities — all in one platform.
+              Building high-performance REST APIs with 75+ tools, AI integrations, and developer utilities — all in one platform.
             </p>
             <div className="flex flex-wrap gap-3">
               <div className="flex items-center gap-1.5 text-xs text-white/40">
