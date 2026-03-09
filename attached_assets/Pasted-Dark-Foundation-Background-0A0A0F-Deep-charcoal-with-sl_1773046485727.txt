@@ -1,0 +1,118 @@
+Dark Foundation
+Background: #0A0A0F (Deep charcoal with slight blue undertone)
+
+Surface/Cards: #14141F (Slightly lighter for contrast)
+
+Borders/Elements: #1E1E2E (Subtle separation)
+
+Accent Colors
+Primary Brand: #6366F1 (Vibrant indigo) - for CTAs, active states
+
+Secondary: #8B5CF6 (Purple) - for API stats, charts
+
+Success: #10B981 (Emerald) - for 2xx responses, active endpoints
+
+Warning: #F59E0B (Amber) - for rate limits, warnings
+
+Error: #EF4444 (Red) - *for 4xx/5xx errors*
+
+Info: #3B82F6 (Blue) - for documentation links
+
+Design Elements
+Typography
+Headings: Inter or Plus Jakarta Sans (bold, clean)
+
+Body: Inter (excellent readability)
+
+Code/Monospace: JetBrains Mono or Fira Code
+
+Scale:
+
+h1: 32px/2rem
+
+h2: 24px/1.5rem
+
+body: 16px/1rem
+
+small: 14px/0.875rem
+
+UI Components
+Cards
+
+Subtle gradient borders on hover
+
+Background: #14141F
+
+Border radius: 12px
+
+Box shadow: 0 8px 16px -4px rgba(0,0,0,0.4)
+
+Sidebar
+
+Background: #0A0A0F
+
+Active item: #6366F1 with 10% opacity + left border accent
+
+Hover state: 5% white overlay
+
+Buttons
+
+Primary: Gradient from #6366F1 to #8B5CF6
+
+Secondary: Outlined with #6366F1
+
+Border radius: 8px
+
+API Response Codes
+
+2xx: #10B981 badge with dark green background
+
+4xx: #F59E0B badge
+
+5xx: #EF4444 badge
+
+Data Visualization
+Line charts: Gradient from #6366F1 to #8B5CF6
+
+Bar charts: Solid #6366F1 with hover state
+
+Donut charts: Multiple accent colors for endpoints
+
+Layout Structure
+text
++--------------------------------------------------+
+|  [Logo]    API Dashboard              [Profile]  |
++--------------------------------------------------+
+|          |                                       |
+| Dashboard|  +------------------+ +--------------+|
+| Endpoints|  | Total Requests   | | Success Rate ||
+| Analytics|  | 1.2M             | | 99.9%        ||
+| Logs     |  +------------------+ +--------------+|
+| Settings |                                         |
+|          |  +----------------------------------+  |
+|          |  | API Endpoints                    |  |
+|          |  | GET /users    ████████ 2.4k rpm |  |
+|          |  | POST /auth    ████      890 rpm |  |
+|          |  +----------------------------------+  |
+|          |                                         |
+|          |  [Realtime Request Graph]               |
++----------+-----------------------------------------+
+Micro-interactions
+Smooth transitions (200ms ease)
+
+Glowing effect on hover for API keys
+
+Skeleton loading states with shimmer animation
+
+Real-time data updates with subtle pulse
+
+Copy-to-clipboard with success checkmark
+
+Accessibility
+Contrast ratio minimum 4.5:1 for text
+
+Focus states with 2px outline (#6366F1)
+
+Support for reduced motion preferences
+
+Semantic HTML with ARIA labels

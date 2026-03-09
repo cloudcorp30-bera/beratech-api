@@ -28,12 +28,14 @@ import { searchMovies } from "./movies";
 import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDramaBoxTrending, getDramaBoxInfo, searchFlixHQ, getFlixHQInfo, discoverDramas } from "./drama";
 import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecentlyUpdated, searchAnilist, getTrendingAnilist, getAnilistInfo, searchNyaa } from "./anime";
 import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
+import { searchMedia, streamMedia } from "./media";
 
 interface DownloadEntry {
   externalUrl: string;
   title: string;
-  format: "mp3" | "mp4";
+  format: "mp3" | "mp4" | "torrent" | "stream";
   expiresAt: number;
+  redirect?: boolean;
 }
 
 const downloadStore = new Map<string, DownloadEntry>();
@@ -108,6 +110,10 @@ export async function registerRoutes(
         api_status: "online",
         response_rate: `${(Math.random() * 50 + 80).toFixed(2)}ms`,
         endpoints: {
+          media: [
+            { path: "/api/media/search", method: "GET", description: "Unified media search — movies, anime & TV series (YTS + MAL + TMDb)" },
+            { path: "/api/media/stream", method: "GET", description: "Unified stream & download — any movie, anime episode or TV series (returns download_url)" },
+          ],
           download: [
             { path: "/api/download/ytmp3", method: "GET", description: "YouTube to MP3" },
             { path: "/api/download/ytmp4", method: "GET", description: "YouTube to MP4" },
@@ -347,6 +353,10 @@ export async function registerRoutes(
       if (entry.expiresAt < Date.now()) {
         downloadStore.delete(id);
         return res.status(410).json({ status: 410, success: false, creator: "beratech", error: "Download link has expired" });
+      }
+
+      if (entry.redirect) {
+        return res.redirect(302, entry.externalUrl);
       }
 
       const ext = entry.format === "mp3" ? "mp3" : "mp4";
@@ -1773,6 +1783,102 @@ export async function registerRoutes(
       const message = error?.message || "An error occurred during conversion";
       console.error("Conversion error:", message);
       return res.status(500).json({ status: 500, success: false, creator: "beratech", error: message });
+    }
+  });
+
+  // ────────────────────────────────────────────────
+  // UNIFIED MEDIA SEARCH  /api/media/search
+  // ────────────────────────────────────────────────
+  app.get("/api/media/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const type = (req.query.type as string) || "all";
+      const page = parseInt(req.query.page as string) || 1;
+
+      if (!query) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: "Missing required parameter: query",
+        });
+      }
+
+      const validTypes = ["all", "movie", "anime", "tv"];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
+        });
+      }
+
+      const result = await searchMedia(query, type as any, page);
+      return res.json({ status: 200, success: true, creator: "beratech", result });
+    } catch (error: any) {
+      console.error("media/search error:", error?.message);
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Search failed" });
+    }
+  });
+
+  // ────────────────────────────────────────────────
+  // UNIFIED MEDIA STREAM  /api/media/stream
+  // ────────────────────────────────────────────────
+  app.get("/api/media/stream", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const type = (req.query.type as string) || "movie";
+      const episode = parseInt(req.query.episode as string) || 1;
+      const season = parseInt(req.query.season as string) || 1;
+
+      if (!query) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: "Missing required parameter: query",
+        });
+      }
+
+      const validTypes = ["movie", "anime", "tv"];
+      if (!validTypes.includes(type)) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: `Invalid type. Must be one of: ${validTypes.join(", ")}`,
+        });
+      }
+
+      const media = await streamMedia(query, type as any, episode, season);
+
+      const dlId = createDownloadId();
+      downloadStore.set(dlId, {
+        externalUrl: media.external_url,
+        title: media.title,
+        format: "mp4",
+        expiresAt: Date.now() + 10 * 60 * 1000,
+        redirect: true,
+      });
+
+      const host = req.get("host") || "bera-api.replit.app";
+      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const downloadUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
+
+      return res.json({
+        status: 200, success: true, creator: "beratech",
+        result: {
+          title: media.title,
+          type: media.type,
+          year: media.year,
+          thumbnail: media.thumbnail,
+          quality: media.quality,
+          episode: media.episode,
+          season: media.season,
+          stream_url: media.stream_url,
+          stream_url_alt: media.stream_url_alt,
+          magnet_link: media.magnet_link,
+          torrent_url: media.torrent_url,
+          message: media.message,
+          download_url: downloadUrl,
+        },
+      });
+    } catch (error: any) {
+      console.error("media/stream error:", error?.message);
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Stream lookup failed" });
     }
   });
 

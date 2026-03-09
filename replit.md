@@ -36,6 +36,11 @@ A comprehensive multi-category API service with a polished web frontend. Include
 
 ## API Endpoints
 
+### Unified Media (2 endpoints — replaces all media-specific searches)
+- `GET /api/media/search?query={term}&type=all|movie|anime|tv&page=1` — Search movies (YTS), anime (MAL/Jikan), TV series (TMDb) in one call
+- `GET /api/media/stream?query={title}&type=movie|anime|tv&episode=1&season=1` — Get stream URL + `download_url` in ytmp3 format (`/dl/cnv/mp4/{id}` → redirects to vidsrc.to)
+  - Response: `{ title, type, year, thumbnail, quality, episode, season, stream_url, stream_url_alt, magnet_link, torrent_url, download_url }`
+
 ### Download
 - `GET /api/download/ytmp3?url={youtube_url}&quality=128kbps` - YouTube to MP3
 - `GET /api/download/ytmp4?url={youtube_url}&quality=360p` - YouTube to MP4

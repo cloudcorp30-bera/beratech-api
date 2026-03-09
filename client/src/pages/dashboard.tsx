@@ -26,6 +26,12 @@ import {
   Settings,
   Tv,
   Film,
+  Globe,
+  Github,
+  Twitter,
+  Star,
+  Cpu,
+  Radio,
 } from "lucide-react";
 
 interface EndpointInfo {
@@ -54,20 +60,23 @@ interface StatsData {
   };
 }
 
-const CATEGORY_META: Record<string, { icon: typeof Download; label: string; color: string }> = {
-  download: { icon: Download, label: "Downloaders", color: "text-blue-500" },
-  search: { icon: Search, label: "Search & Movies", color: "text-emerald-500" },
-  drama: { icon: Tv, label: "Drama & Series", color: "text-pink-500" },
-  anime: { icon: Film, label: "Anime & Torrents", color: "text-violet-500" },
-  tools: { icon: Wrench, label: "Tools", color: "text-amber-500" },
-  developer: { icon: Code, label: "Developer Tools", color: "text-cyan-500" },
-  ai: { icon: Bot, label: "AI Tools", color: "text-rose-500" },
-  location: { icon: MapPin, label: "Location", color: "text-green-500" },
-  utilities: { icon: Settings, label: "Utilities", color: "text-orange-500" },
-  ephoto360: { icon: Sparkles, label: "EPhoto360 Effects", color: "text-purple-500" },
+const CATEGORY_META: Record<string, { icon: typeof Download; label: string; gradient: string; border: string; badge: string }> = {
+  media:     { icon: Radio,    label: "Unified Media",       gradient: "from-indigo-500/20 to-violet-500/10", border: "border-indigo-500/30", badge: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30" },
+  download:  { icon: Download, label: "Downloaders",         gradient: "from-blue-500/20 to-sky-500/10",     border: "border-blue-500/30",   badge: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
+  search:    { icon: Search,   label: "Search & Movies",     gradient: "from-emerald-500/20 to-teal-500/10", border: "border-emerald-500/30", badge: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
+  drama:     { icon: Tv,       label: "Drama & Series",      gradient: "from-pink-500/20 to-rose-500/10",    border: "border-pink-500/30",   badge: "bg-pink-500/15 text-pink-400 border-pink-500/30" },
+  anime:     { icon: Film,     label: "Anime & Torrents",    gradient: "from-violet-500/20 to-purple-500/10",border: "border-violet-500/30", badge: "bg-violet-500/15 text-violet-400 border-violet-500/30" },
+  tools:     { icon: Wrench,   label: "Tools",               gradient: "from-amber-500/20 to-yellow-500/10", border: "border-amber-500/30",  badge: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
+  developer: { icon: Code,     label: "Developer Tools",     gradient: "from-cyan-500/20 to-sky-500/10",     border: "border-cyan-500/30",   badge: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30" },
+  ai:        { icon: Bot,      label: "AI Tools",            gradient: "from-rose-500/20 to-red-500/10",     border: "border-rose-500/30",   badge: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+  location:  { icon: MapPin,   label: "Location",            gradient: "from-green-500/20 to-lime-500/10",   border: "border-green-500/30",  badge: "bg-green-500/15 text-green-400 border-green-500/30" },
+  utilities: { icon: Settings, label: "Utilities",           gradient: "from-orange-500/20 to-amber-500/10", border: "border-orange-500/30", badge: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
+  ephoto360: { icon: Sparkles, label: "EPhoto360 Effects",   gradient: "from-purple-500/20 to-fuchsia-500/10",border: "border-purple-500/30",badge: "bg-purple-500/15 text-purple-400 border-purple-500/30" },
 };
 
 const EXAMPLE_URLS: Record<string, string> = {
+  "/api/media/search": "/api/media/search?query=batman&type=all",
+  "/api/media/stream": "/api/media/stream?query=batman&type=movie",
   "/api/download/ytmp3": "/api/download/ytmp3?url=https://youtu.be/dQw4w9WgXcQ&quality=128kbps",
   "/api/download/ytmp4": "/api/download/ytmp4?url=https://youtu.be/dQw4w9WgXcQ&quality=720p",
   "/api/download/tiktok": "/api/download/tiktok?url=https://www.tiktok.com/@user/video/1234567890",
@@ -177,6 +186,17 @@ const EXAMPLE_URLS: Record<string, string> = {
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
+  "/api/media/search": [
+    { key: "query", placeholder: "Search query (e.g. batman, naruto, squid game)", required: true },
+    { key: "type", placeholder: "Type: all, movie, anime, tv (default: all)", required: false },
+    { key: "page", placeholder: "Page number (default: 1)", required: false },
+  ],
+  "/api/media/stream": [
+    { key: "query", placeholder: "Title to stream (e.g. batman, naruto, squid game)", required: true },
+    { key: "type", placeholder: "Type: movie, anime, tv (default: movie)", required: false },
+    { key: "episode", placeholder: "Episode number (default: 1, for anime/tv)", required: false },
+    { key: "season", placeholder: "Season number (default: 1, for tv)", required: false },
+  ],
   "/api/download/ytmp3": [
     { key: "url", placeholder: "YouTube URL (e.g. https://youtu.be/dQw4w9WgXcQ)", required: true },
     { key: "quality", placeholder: "Quality (128kbps, 320kbps)", required: false },
@@ -185,31 +205,21 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "url", placeholder: "YouTube URL", required: true },
     { key: "quality", placeholder: "Quality (360p, 720p)", required: false },
   ],
-  "/api/download/tiktok": [
-    { key: "url", placeholder: "TikTok URL", required: true },
-  ],
+  "/api/download/tiktok": [{ key: "url", placeholder: "TikTok URL", required: true }],
   "/api/search/yts": [
     { key: "query", placeholder: "Search term (e.g. Rick Astley)", required: true },
     { key: "limit", placeholder: "Limit (default: 10)", required: false },
   ],
-  "/api/search/lyrics": [
-    { key: "query", placeholder: "Song name (e.g. Shape of You)", required: true },
-  ],
-  "/api/search/wiki": [
-    { key: "query", placeholder: "Search term (e.g. Linux)", required: true },
-  ],
+  "/api/search/lyrics": [{ key: "query", placeholder: "Song name (e.g. Shape of You)", required: true }],
+  "/api/search/wiki": [{ key: "query", placeholder: "Search term (e.g. Linux)", required: true }],
   "/api/tools/translate": [
     { key: "text", placeholder: "Text to translate", required: true },
     { key: "to", placeholder: "Target language code (e.g. es, fr)", required: true },
     { key: "from", placeholder: "Source language (default: en)", required: false },
   ],
-  "/api/tools/github": [
-    { key: "username", placeholder: "GitHub username (e.g. torvalds)", required: true },
-  ],
+  "/api/tools/github": [{ key: "username", placeholder: "GitHub username (e.g. torvalds)", required: true }],
   "/api/tools/quote": [],
-  "/api/tools/screenshot": [
-    { key: "url", placeholder: "Website URL (e.g. https://google.com)", required: true },
-  ],
+  "/api/tools/screenshot": [{ key: "url", placeholder: "Website URL (e.g. https://google.com)", required: true }],
   "/api/ephoto360/list": [],
   "/api/dev/hash": [
     { key: "text", placeholder: "Text to hash (e.g. hello)", required: true },
@@ -332,7 +342,7 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "language", placeholder: "Language (optional)", required: false },
   ],
   "/api/ai/debug": [
-    { key: "code", placeholder: "Code to debug (e.g. for(let i=0;i<10;i++)console.log(i)", required: true },
+    { key: "code", placeholder: "Code to debug", required: true },
     { key: "error", placeholder: "Error message (optional)", required: false },
     { key: "language", placeholder: "Language (optional)", required: false },
   ],
@@ -383,9 +393,7 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "voice", placeholder: "Voice: alloy, echo, fable, onyx, nova, shimmer", required: false },
     { key: "from", placeholder: "Source language (optional, auto-detected)", required: false },
   ],
-  "/api/location/geoip": [
-    { key: "ip", placeholder: "IP address (leave empty for your IP)", required: false },
-  ],
+  "/api/location/geoip": [{ key: "ip", placeholder: "IP address (leave empty for your IP)", required: false }],
   "/api/location/reverse": [
     { key: "lat", placeholder: "Latitude (e.g. 40.7128)", required: true },
     { key: "lon", placeholder: "Longitude (e.g. -74.0060)", required: true },
@@ -398,9 +406,7 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "ua", placeholder: "User agent string (leave empty for yours)", required: false },
     { key: "ip", placeholder: "IP for location (optional)", required: false },
   ],
-  "/api/utils/weather": [
-    { key: "location", placeholder: "City or location (e.g. London, New York)", required: true },
-  ],
+  "/api/utils/weather": [{ key: "location", placeholder: "City or location (e.g. London, New York)", required: true }],
   "/api/utils/crypto": [
     { key: "coin", placeholder: "Coin name or symbol (e.g. bitcoin, eth)", required: true },
     { key: "currency", placeholder: "Currency: usd, eur, gbp (default usd)", required: false },
@@ -410,12 +416,8 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "to", placeholder: "To currency (e.g. EUR)", required: true },
     { key: "amount", placeholder: "Amount (default 1)", required: false },
   ],
-  "/api/utils/shorten": [
-    { key: "url", placeholder: "URL to shorten (e.g. https://example.com/long-path)", required: true },
-  ],
-  "/api/utils/whois": [
-    { key: "domain", placeholder: "Domain name (e.g. google.com)", required: true },
-  ],
+  "/api/utils/shorten": [{ key: "url", placeholder: "URL to shorten (e.g. https://example.com/long-path)", required: true }],
+  "/api/utils/whois": [{ key: "domain", placeholder: "Domain name (e.g. google.com)", required: true }],
   "/api/utils/phone": [
     { key: "phone", placeholder: "Phone number (e.g. +14155552671)", required: true },
     { key: "country_code", placeholder: "Country code (optional, e.g. US)", required: false },
@@ -424,15 +426,9 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "source", placeholder: "Source: hackernews (default)", required: false },
     { key: "limit", placeholder: "Number of articles (default 10, max 30)", required: false },
   ],
-  "/api/utils/gitignore": [
-    { key: "templates", placeholder: "Templates (e.g. node,python,vscode)", required: true },
-  ],
-  "/api/utils/metadata": [
-    { key: "url", placeholder: "Website URL to scrape metadata from", required: true },
-  ],
-  "/api/utils/uptime": [
-    { key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true },
-  ],
+  "/api/utils/gitignore": [{ key: "templates", placeholder: "Templates (e.g. node,python,vscode)", required: true }],
+  "/api/utils/metadata": [{ key: "url", placeholder: "Website URL to scrape metadata from", required: true }],
+  "/api/utils/uptime": [{ key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true }],
   "/api/search/movies": [
     { key: "query", placeholder: "Movie title (e.g. batman, inception)", required: true },
     { key: "limit", placeholder: "Results limit (default: 20, max: 50)", required: false },
@@ -441,16 +437,12 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "query", placeholder: "Drama/series name (e.g. goblin, squid game)", required: true },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
-  "/api/drama/info": [
-    { key: "id", placeholder: "TMDb TV ID (e.g. 93405 for Squid Game)", required: true },
-  ],
+  "/api/drama/info": [{ key: "id", placeholder: "TMDb TV ID (e.g. 93405 for Squid Game)", required: true }],
   "/api/drama/season": [
     { key: "id", placeholder: "TMDb TV ID (e.g. 93405)", required: true },
     { key: "season", placeholder: "Season number (e.g. 1)", required: true },
   ],
-  "/api/drama/trending": [
-    { key: "region", placeholder: "Country code: KR, JP, CN, TH, US (default: KR)", required: false },
-  ],
+  "/api/drama/trending": [{ key: "region", placeholder: "Country code: KR, JP, CN, TH, US (default: KR)", required: false }],
   "/api/drama/discover": [
     { key: "country", placeholder: "Country code: KR, JP, CN, TH, US", required: false },
     { key: "genre", placeholder: "TMDb genre ID (e.g. 18=Drama, 10759=Action)", required: false },
@@ -466,23 +458,15 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "query", placeholder: "Movie/series name (e.g. squid game)", required: true },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
-  "/api/drama/flixhq/info": [
-    { key: "id", placeholder: "FlixHQ media ID (e.g. tv/watch-squid-game-72172)", required: true },
-  ],
+  "/api/drama/flixhq/info": [{ key: "id", placeholder: "FlixHQ media ID (e.g. tv/watch-squid-game-72172)", required: true }],
   "/api/anime/search": [
     { key: "query", placeholder: "Anime name (e.g. naruto, one piece)", required: true },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
   "/api/anime/spotlight": [],
-  "/api/anime/airing": [
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/popular": [
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
-  "/api/anime/recent": [
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
+  "/api/anime/airing": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
+  "/api/anime/popular": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
+  "/api/anime/recent": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
   "/api/anime/anilist/search": [
     { key: "query", placeholder: "Anime title (e.g. attack on titan)", required: true },
     { key: "limit", placeholder: "Results per page (default: 20, max: 50)", required: false },
@@ -492,9 +476,7 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "limit", placeholder: "Results (default: 20, max: 50)", required: false },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
-  "/api/anime/anilist/info": [
-    { key: "id", placeholder: "AniList ID (e.g. 16498 for AoT)", required: true },
-  ],
+  "/api/anime/anilist/info": [{ key: "id", placeholder: "AniList ID (e.g. 16498 for AoT)", required: true }],
   "/api/torrent/nyaa": [
     { key: "query", placeholder: "Anime title (e.g. one piece, demon slayer)", required: true },
     { key: "category", placeholder: "Category: anime-eng, anime-raw, all (default: anime-eng)", required: false },
@@ -514,9 +496,7 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "page", placeholder: "Page number (default: 1)", required: false },
     { key: "limit", placeholder: "Results per page (default: 20, max: 25)", required: false },
   ],
-  "/api/anime/jikan/info": [
-    { key: "id", placeholder: "MAL (MyAnimeList) ID (e.g. 20 for Naruto)", required: true },
-  ],
+  "/api/anime/jikan/info": [{ key: "id", placeholder: "MAL (MyAnimeList) ID (e.g. 20 for Naruto)", required: true }],
   "/api/anime/jikan/episodes": [
     { key: "id", placeholder: "MAL ID (e.g. 20 for Naruto)", required: true },
     { key: "page", placeholder: "Page number (100 episodes per page, default: 1)", required: false },
@@ -526,39 +506,30 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "filter", placeholder: "Filter: airing, upcoming, bypopularity, favorite (default: airing)", required: false },
     { key: "page", placeholder: "Page number (default: 1)", required: false },
   ],
-  "/api/anime/jikan/season": [
-    { key: "page", placeholder: "Page number (default: 1)", required: false },
-  ],
+  "/api/anime/jikan/season": [{ key: "page", placeholder: "Page number (default: 1)", required: false }],
 };
 
 function getEndpointParams(ep: EndpointInfo): Array<{ key: string; placeholder: string; required: boolean }> {
   if (STATIC_PARAMS[ep.path]) return STATIC_PARAMS[ep.path];
-
   if (ep.path.startsWith("/api/ephoto360/")) {
     const inputs = ep.text_inputs || 1;
-    if (inputs === 1) {
-      return [{ key: "text", placeholder: "Your text", required: true }];
-    } else if (inputs === 2) {
-      return [
-        { key: "text1", placeholder: "First text", required: true },
-        { key: "text2", placeholder: "Second text", required: true },
-      ];
-    } else {
-      return [
-        { key: "text1", placeholder: "First text", required: true },
-        { key: "text2", placeholder: "Second text", required: true },
-        { key: "text3", placeholder: "Third text", required: true },
-      ];
-    }
+    if (inputs === 1) return [{ key: "text", placeholder: "Your text", required: true }];
+    if (inputs === 2) return [
+      { key: "text1", placeholder: "First text", required: true },
+      { key: "text2", placeholder: "Second text", required: true },
+    ];
+    return [
+      { key: "text1", placeholder: "First text", required: true },
+      { key: "text2", placeholder: "Second text", required: true },
+      { key: "text3", placeholder: "Third text", required: true },
+    ];
   }
-
   return [];
 }
 
 function getExampleUrl(ep: EndpointInfo): string {
   if (EXAMPLE_URLS[ep.path]) return EXAMPLE_URLS[ep.path];
   if (ep.path.startsWith("/api/ephoto360/") && ep.path !== "/api/ephoto360/list") {
-    const slug = ep.path.split("/").pop();
     const inputs = ep.text_inputs || 1;
     if (inputs === 1) return `${ep.path}?text=Bera`;
     if (inputs === 2) return `${ep.path}?text1=Bera&text2=Tech`;
@@ -612,46 +583,53 @@ function EndpointTestCard({ ep }: { ep: EndpointInfo }) {
   };
 
   return (
-    <Card className="overflow-visible" data-testid={`endpoint-card-${ep.path.replace(/\//g, "-").slice(1)}`}>
+    <div
+      className="rounded-xl border border-[#1E1E2E] bg-[#14141F] hover:border-indigo-500/40 transition-all duration-200 overflow-hidden"
+      data-testid={`endpoint-card-${ep.path.replace(/\//g, "-").slice(1)}`}
+      style={{ boxShadow: "0 4px 12px -4px rgba(0,0,0,0.4)" }}
+    >
       <div className="p-3 space-y-2">
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="outline" className="shrink-0 font-mono text-xs">
+            <span className="shrink-0 font-mono text-xs px-1.5 py-0.5 rounded bg-indigo-500/15 text-indigo-400 border border-indigo-500/25">
               {ep.method}
-            </Badge>
-            <span className="text-sm font-medium text-foreground">{ep.description}</span>
+            </span>
+            <span className="text-sm font-medium text-white/90">{ep.description}</span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {ep.text_inputs && (
-              <Badge variant="secondary" className="text-xs">
+              <span className="text-xs px-1.5 py-0.5 rounded bg-violet-500/15 text-violet-400 border border-violet-500/25">
                 {ep.text_inputs === 1 ? "1 text" : `${ep.text_inputs} texts`}
-              </Badge>
+              </span>
             )}
             <Button
               variant={testing ? "default" : "outline"}
               size="sm"
+              className={testing
+                ? "bg-indigo-600 hover:bg-indigo-700 text-white border-0 h-7 text-xs px-2.5"
+                : "border-[#1E1E2E] bg-transparent hover:bg-white/5 text-white/70 h-7 text-xs px-2.5"}
               onClick={() => {
                 setTesting(!testing);
                 if (testing) { setResult(null); setParams({}); }
               }}
               data-testid={`button-test-${ep.path.replace(/\//g, "-").slice(1)}`}
             >
-              {testing ? (
-                <><X className="w-3 h-3" /> Close</>
-              ) : (
-                <><Play className="w-3 h-3" /> Test</>
-              )}
+              {testing ? <><X className="w-3 h-3 mr-1" /> Close</> : <><Play className="w-3 h-3 mr-1" /> Test</>}
             </Button>
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <div className="flex-1 min-w-0 bg-muted/50 dark:bg-muted/30 rounded-md px-3 py-1.5 font-mono text-xs text-muted-foreground overflow-x-auto whitespace-nowrap" data-testid={`text-endpoint-url-${ep.path.replace(/\//g, "-").slice(1)}`}>
+          <div
+            className="flex-1 min-w-0 bg-black/30 rounded-lg px-3 py-1.5 font-mono text-xs text-indigo-300/70 overflow-x-auto whitespace-nowrap border border-[#1E1E2E]"
+            data-testid={`text-endpoint-url-${ep.path.replace(/\//g, "-").slice(1)}`}
+          >
             {fullExampleUrl}
           </div>
           <Button
             variant="ghost"
             size="icon"
+            className="shrink-0 w-7 h-7 hover:bg-white/5 text-white/40 hover:text-white/70"
             onClick={copyEndpoint}
             data-testid={`button-copy-url-${ep.path.replace(/\//g, "-").slice(1)}`}
           >
@@ -661,17 +639,17 @@ function EndpointTestCard({ ep }: { ep: EndpointInfo }) {
       </div>
 
       {testing && (
-        <div className="px-3 pb-3 space-y-3 border-t pt-3 animate-scale-in">
+        <div className="px-3 pb-3 space-y-3 border-t border-[#1E1E2E] pt-3">
           {endpointParams.length > 0 ? (
             <div className="space-y-2">
               {endpointParams.map((p) => (
                 <div key={p.key} className="flex items-center gap-2">
                   <div className="flex items-center gap-1 shrink-0 w-20">
-                    <code className="text-xs font-mono text-muted-foreground">{p.key}</code>
-                    {p.required && <span className="text-destructive text-xs">*</span>}
+                    <code className="text-xs font-mono text-indigo-400">{p.key}</code>
+                    {p.required && <span className="text-red-400 text-xs">*</span>}
                   </div>
                   <Input
-                    className="text-sm"
+                    className="text-sm bg-black/30 border-[#1E1E2E] text-white/80 placeholder:text-white/25 focus:border-indigo-500/50 h-8"
                     placeholder={p.placeholder}
                     value={params[p.key] || ""}
                     onChange={(e) => setParams({ ...params, [p.key]: e.target.value })}
@@ -681,37 +659,46 @@ function EndpointTestCard({ ep }: { ep: EndpointInfo }) {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-muted-foreground">No parameters required</p>
+            <p className="text-xs text-white/30">No parameters required</p>
           )}
 
           <div className="flex gap-2 flex-wrap">
             <Button
               size="sm"
+              className="bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white border-0 h-8"
               onClick={runTest}
               disabled={loading}
               data-testid={`button-run-test-${ep.path.replace(/\//g, "-").slice(1)}`}
             >
               {loading ? (
-                <><Loader2 className="w-3 h-3 animate-spin" /> Testing...</>
+                <><Loader2 className="w-3 h-3 animate-spin mr-1" /> Testing...</>
               ) : (
-                <><Play className="w-3 h-3" /> Send Request</>
+                <><Play className="w-3 h-3 mr-1" /> Send Request</>
               )}
             </Button>
             {result && (
-              <Button variant="outline" size="sm" onClick={copyResult}>
-                <Copy className="w-3 h-3" /> Copy
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-[#1E1E2E] bg-transparent hover:bg-white/5 text-white/60 h-8"
+                onClick={copyResult}
+              >
+                <Copy className="w-3 h-3 mr-1" /> Copy
               </Button>
             )}
           </div>
 
           {result && (
-            <pre className="text-xs bg-muted/60 p-3 rounded-md font-mono overflow-x-auto max-h-60 overflow-y-auto whitespace-pre-wrap break-all" data-testid="text-test-result">
+            <pre
+              className="text-xs bg-black/40 p-3 rounded-lg font-mono overflow-x-auto max-h-60 overflow-y-auto whitespace-pre-wrap break-all text-emerald-300/80 border border-[#1E1E2E]"
+              data-testid="text-test-result"
+            >
               {result}
             </pre>
           )}
         </div>
       )}
-    </Card>
+    </div>
   );
 }
 
@@ -724,134 +711,254 @@ export default function Dashboard() {
   const stats = data?.result;
   const memPercent = stats ? Math.round((stats.memory.used_bytes / stats.memory.total_bytes) * 100) : 0;
 
+  const totalEndpoints = stats?.endpoints
+    ? Object.values(stats.endpoints).reduce((acc, arr) => acc + arr.length, 0)
+    : 0;
+
   return (
-    <div className="p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap animate-fade-in-up">
+    <div className="min-h-screen bg-[#0A0A0F] p-4 sm:p-6 max-w-6xl mx-auto space-y-6">
+
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between gap-4 flex-wrap">
         <div>
-          <h1 className="text-2xl font-bold text-foreground" data-testid="text-dashboard-title">
+          <h1
+            className="text-2xl font-bold bg-gradient-to-r from-indigo-400 via-violet-400 to-purple-400 bg-clip-text text-transparent"
+            data-testid="text-dashboard-title"
+          >
             Bera API Dashboard
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-white/40 mt-0.5">
             API v3.0 — Status & Endpoint Testing
           </p>
         </div>
-        <Badge
-          variant="default"
-          className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        <div
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 text-xs font-medium"
           data-testid="badge-status"
         >
-          <Activity className="w-3 h-3 mr-1 animate-shimmer-pulse" />
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Online
-        </Badge>
+        </div>
       </div>
 
+      {/* ── Developer Card ── */}
+      <div
+        className="rounded-2xl border border-[#1E1E2E] overflow-hidden relative"
+        style={{
+          background: "linear-gradient(135deg, #14141F 0%, #1a1025 40%, #0f1a2e 100%)",
+          boxShadow: "0 8px 32px -8px rgba(99,102,241,0.2)",
+        }}
+        data-testid="card-developer-profile"
+      >
+        <div className="absolute inset-0 opacity-30" style={{
+          background: "radial-gradient(ellipse at 20% 50%, rgba(99,102,241,0.15) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(139,92,246,0.12) 0%, transparent 50%)",
+        }} />
+        <div className="relative p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <div className="relative shrink-0">
+            <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-indigo-500/40" style={{ boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
+              <img
+                src="https://getshared.com/d/XanlJ5cJ"
+                alt="Bruce Bera"
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = `https://api.dicebear.com/9.x/initials/svg?seed=BB&backgroundColor=6366f1&textColor=ffffff&radius=12`;
+                }}
+                data-testid="img-developer-avatar"
+              />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 border-2 border-[#14141F] flex items-center justify-center">
+              <div className="w-2 h-2 rounded-full bg-white" />
+            </div>
+          </div>
+
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
+              <h2 className="text-xl font-bold text-white" data-testid="text-developer-name">Bruce Bera</h2>
+              <span className="text-xs px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium">
+                API Developer
+              </span>
+            </div>
+            <p className="text-sm text-white/50 mb-3">
+              Building high-performance REST APIs with 75+ tools, AI integrations, media streaming, and developer utilities — all in one platform.
+            </p>
+            <div className="flex flex-wrap gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <Globe className="w-3.5 h-3.5 text-indigo-400" />
+                <span>beratech API</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <Cpu className="w-3.5 h-3.5 text-violet-400" />
+                <span>{totalEndpoints > 0 ? `${totalEndpoints}+ endpoints` : "100+ endpoints"}</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <Star className="w-3.5 h-3.5 text-amber-400" />
+                <span>Free & Open API</span>
+              </div>
+              <div className="flex items-center gap-1.5 text-xs text-white/40">
+                <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                <span>99.9% uptime</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 shrink-0">
+            <div className="text-center px-4 py-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20">
+              <p className="text-lg font-bold text-indigo-300" data-testid="text-total-endpoints">{totalEndpoints || "100"}+</p>
+              <p className="text-xs text-white/40">Endpoints</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Stat Cards ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Card className="p-4 animate-fade-in-up stagger-1">
+        <div
+          className="rounded-xl border border-[#1E1E2E] p-4 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #14141F, #1a1535)" }}
+          data-testid="card-stat-uptime"
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full bg-indigo-500/8" />
           <div className="flex items-center gap-2 mb-2">
-            <Clock className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Server Runtime
-            </span>
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/15 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5 text-indigo-400" />
+            </div>
+            <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Uptime</span>
           </div>
           {isLoading ? (
-            <div className="h-6 w-28 bg-muted animate-pulse rounded" />
+            <div className="h-6 w-28 bg-white/5 animate-pulse rounded" />
           ) : (
-            <p className="text-base font-bold text-foreground" data-testid="text-uptime">
+            <p className="text-base font-bold text-white" data-testid="text-uptime">
               {stats?.uptime || "—"}
             </p>
           )}
-        </Card>
+        </div>
 
-        <Card className="p-4 animate-fade-in-up stagger-2">
+        <div
+          className="rounded-xl border border-[#1E1E2E] p-4 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #14141F, #1a1030)" }}
+          data-testid="card-stat-memory"
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full bg-violet-500/8" />
           <div className="flex items-center gap-2 mb-2">
-            <HardDrive className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              RAM Usage
-            </span>
+            <div className="w-7 h-7 rounded-lg bg-violet-500/15 flex items-center justify-center">
+              <HardDrive className="w-3.5 h-3.5 text-violet-400" />
+            </div>
+            <span className="text-xs font-medium text-white/40 uppercase tracking-wider">RAM</span>
           </div>
           {isLoading ? (
-            <div className="h-6 w-28 bg-muted animate-pulse rounded" />
+            <div className="h-6 w-28 bg-white/5 animate-pulse rounded" />
           ) : (
             <div>
-              <p className="text-base font-bold text-foreground" data-testid="text-memory">
+              <p className="text-base font-bold text-white" data-testid="text-memory">
                 {stats?.memory?.used || "—"} / {stats?.memory?.total || "—"}
               </p>
-              <div className="mt-1.5 h-1.5 w-full bg-muted rounded-full overflow-hidden">
+              <div className="mt-1.5 h-1 w-full bg-white/5 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-primary rounded-full transition-all duration-700"
+                  className="h-full bg-gradient-to-r from-violet-500 to-purple-500 rounded-full transition-all duration-700"
                   style={{ width: `${memPercent}%` }}
                 />
               </div>
             </div>
           )}
-        </Card>
+        </div>
 
-        <Card className="p-4 animate-fade-in-up stagger-3">
+        <div
+          className="rounded-xl border border-[#1E1E2E] p-4 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #14141F, #0d2018)" }}
+          data-testid="card-stat-requests"
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full bg-emerald-500/8" />
           <div className="flex items-center gap-2 mb-2">
-            <Zap className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Total Requests
-            </span>
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/15 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+            <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Requests</span>
           </div>
           {isLoading ? (
-            <div className="h-6 w-16 bg-muted animate-pulse rounded" />
+            <div className="h-6 w-16 bg-white/5 animate-pulse rounded" />
           ) : (
-            <p className="text-base font-bold text-foreground" data-testid="text-requests">
+            <p className="text-base font-bold text-white" data-testid="text-requests">
               {stats?.total_requests?.toLocaleString() || "0"}
             </p>
           )}
-        </Card>
+        </div>
 
-        <Card className="p-4 animate-fade-in-up stagger-4">
+        <div
+          className="rounded-xl border border-[#1E1E2E] p-4 relative overflow-hidden"
+          style={{ background: "linear-gradient(135deg, #14141F, #1f1608)" }}
+          data-testid="card-stat-response"
+        >
+          <div className="absolute top-0 right-0 w-16 h-16 rounded-bl-full bg-amber-500/8" />
           <div className="flex items-center gap-2 mb-2">
-            <Gauge className="w-4 h-4 text-muted-foreground" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Response Rate
-            </span>
+            <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center">
+              <Gauge className="w-3.5 h-3.5 text-amber-400" />
+            </div>
+            <span className="text-xs font-medium text-white/40 uppercase tracking-wider">Response</span>
           </div>
           {isLoading ? (
-            <div className="h-6 w-20 bg-muted animate-pulse rounded" />
+            <div className="h-6 w-20 bg-white/5 animate-pulse rounded" />
           ) : (
-            <p className="text-base font-bold text-foreground" data-testid="text-response-rate">
+            <p className="text-base font-bold text-white" data-testid="text-response-rate">
               {stats?.response_rate || "—"}
             </p>
           )}
-        </Card>
+        </div>
       </div>
 
-      <Card className="p-4 animate-fade-in-up stagger-5">
-        <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-          <span className="text-sm font-semibold text-foreground">System Health</span>
-          <Badge
-            variant="default"
-            className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-          >
-            All Endpoints Operational
-          </Badge>
+      {/* ── System Health ── */}
+      <div
+        className="rounded-xl border border-[#1E1E2E] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3"
+        style={{ background: "#14141F" }}
+        data-testid="card-system-health"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div>
+            <span className="text-sm font-semibold text-white">System Health</span>
+            <span className="ml-2 text-xs text-white/30">All endpoints operational</span>
+          </div>
         </div>
-        <p className="text-xs text-muted-foreground">
-          Api Status: <span className="text-emerald-500 font-medium">Online</span> — Response Rate: {stats?.response_rate || "—"} — Last Refreshed: 5 seconds ago
-        </p>
-      </Card>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-white/35">
+          <span>Status: <span className="text-emerald-400 font-medium">Online</span></span>
+          <span>Response: <span className="text-indigo-300 font-medium">{stats?.response_rate || "—"}</span></span>
+          <span>Requests: <span className="text-violet-300 font-medium">{stats?.total_requests?.toLocaleString() || "0"}</span></span>
+        </div>
+      </div>
 
+      {/* ── Endpoint Categories ── */}
       {stats?.endpoints && Object.entries(stats.endpoints).map(([category, endpoints], catIdx) => {
-        const meta = CATEGORY_META[category] || { icon: ChevronRight, label: category, color: "text-foreground" };
+        const meta = CATEGORY_META[category] || {
+          icon: ChevronRight,
+          label: category,
+          gradient: "from-white/5 to-transparent",
+          border: "border-white/10",
+          badge: "bg-white/10 text-white/50 border-white/15",
+        };
         const Icon = meta.icon;
 
         return (
-          <div key={category} className="space-y-2 animate-fade-in-up" style={{ animationDelay: `${0.3 + catIdx * 0.1}s` }}>
-            <div className="flex items-center gap-2">
-              <Icon className={`w-4 h-4 ${meta.color}`} />
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wider">
+          <div
+            key={category}
+            className="space-y-3"
+            style={{ animationDelay: `${0.1 + catIdx * 0.08}s` }}
+            data-testid={`section-category-${category}`}
+          >
+            <div
+              className={`flex items-center gap-3 px-4 py-3 rounded-xl bg-gradient-to-r ${meta.gradient} border ${meta.border}`}
+            >
+              <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${meta.badge}`}>
+                <Icon className="w-3.5 h-3.5" />
+              </div>
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider flex-1">
                 {meta.label}
               </h2>
-              <Badge variant="secondary" className="text-xs">{endpoints.length}</Badge>
+              <span className={`text-xs px-2 py-0.5 rounded-full border font-medium ${meta.badge}`}>
+                {endpoints.length}
+              </span>
             </div>
-            <div className="space-y-2">
-              {endpoints.map((ep: EndpointInfo, epIdx: number) => (
-                <div key={ep.path} className="animate-fade-in" style={{ animationDelay: `${0.35 + catIdx * 0.1 + epIdx * 0.03}s` }}>
-                  <EndpointTestCard ep={ep} />
-                </div>
+
+            <div className="space-y-2 pl-1">
+              {endpoints.map((ep: EndpointInfo) => (
+                <EndpointTestCard key={ep.path} ep={ep} />
               ))}
             </div>
           </div>
@@ -861,10 +968,15 @@ export default function Dashboard() {
       {isLoading && (
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, i) => (
-            <div key={i} className="h-14 bg-muted animate-pulse rounded-md" />
+            <div key={i} className="h-14 bg-white/3 animate-pulse rounded-xl border border-[#1E1E2E]" />
           ))}
         </div>
       )}
+
+      {/* ── Footer ── */}
+      <div className="text-center py-4 text-xs text-white/20 border-t border-[#1E1E2E]">
+        Built by <span className="text-indigo-400 font-medium">Bruce Bera</span> — beratech API v3.0
+      </div>
     </div>
   );
 }
