@@ -29,6 +29,9 @@ import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDrama
 import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecentlyUpdated, searchAnilist, getTrendingAnilist, getAnilistInfo, searchNyaa } from "./anime";
 import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
 import { searchMedia, streamMedia } from "./media";
+import { extractM3U8 } from "./vidsrc-extractor";
+import { searchMovieBox } from "./moviebox";
+import { getGoojaraInfo, getTrendingGoojara } from "./goojara";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -1882,6 +1885,129 @@ export async function registerRoutes(
     } catch (error: any) {
       console.error("media/stream error:", error?.message);
       return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Stream lookup failed" });
+    }
+  });
+
+  // ── vidsrc M3U8 extraction ────────────────────────────────────────────
+  app.get("/api/media/m3u8", async (req, res) => {
+    try {
+      const tmdb = req.query.tmdb as string;
+      const type = ((req.query.type as string) || "movie") as "movie" | "tv";
+      const season = parseInt(req.query.season as string) || 1;
+      const episode = parseInt(req.query.episode as string) || 1;
+
+      if (!tmdb) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: tmdb (TMDB ID)" });
+      }
+      if (!["movie", "tv"].includes(type)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "type must be movie or tv" });
+      }
+
+      const result = await extractM3U8(tmdb, type, season, episode);
+
+      // Build embed URL alternatives (always available as fallback)
+      const embedUrls: Record<string, string> = type === "movie"
+        ? {
+            vidsrc_xyz: `https://vidsrc.xyz/embed/movie/${tmdb}`,
+            vidsrc_me: `https://vidsrc.me/embed/movie?tmdb=${tmdb}`,
+            multiembed: `https://multiembed.mov/?video_id=${tmdb}&tmdb=1`,
+            vidlink: `https://vidlink.pro/movie/${tmdb}`,
+            superembed: `https://superembed.stream/embed?tmdb=${tmdb}&type=movie`,
+          }
+        : {
+            vidsrc_xyz: `https://vidsrc.xyz/embed/tv/${tmdb}/${season}/${episode}`,
+            vidsrc_me: `https://vidsrc.me/embed/tv?tmdb=${tmdb}&season=${season}&episode=${episode}`,
+            multiembed: `https://multiembed.mov/?video_id=${tmdb}&tmdb=1&s=${season}&e=${episode}`,
+            vidlink: `https://vidlink.pro/tv/${tmdb}/${season}/${episode}`,
+            superembed: `https://superembed.stream/embed?tmdb=${tmdb}&type=tv&season=${season}&episode=${episode}`,
+          };
+
+      if (!result) {
+        return res.json({
+          status: 200, success: true, creator: "beratech",
+          result: {
+            tmdb_id: tmdb,
+            type,
+            ...(type === "tv" ? { season, episode } : {}),
+            m3u8_url: null,
+            embed_urls: embedUrls,
+            note: "Direct M3U8 extraction unavailable (stream provider anti-bot protection). Use embed_urls to display the player in an iframe.",
+          },
+        });
+      }
+
+      return res.json({
+        status: 200, success: true, creator: "beratech",
+        result: {
+          tmdb_id: tmdb,
+          type,
+          ...(type === "tv" ? { season, episode } : {}),
+          m3u8_url: result.stream,
+          referer: result.referer,
+          provider: result.provider,
+          embed_urls: embedUrls,
+          note: "Use m3u8_url with VLC, ffmpeg, or any HLS-compatible player. Set Referer header. embed_urls are browser-playable alternatives.",
+        },
+      });
+    } catch (error: any) {
+      console.error("media/m3u8 error:", error?.message);
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "M3U8 extraction failed" });
+    }
+  });
+
+  // ── moviebox.ph search ───────────────────────────────────────────────
+  app.get("/api/media/moviebox/search", async (req, res) => {
+    try {
+      const query = req.query.query as string;
+      const page = parseInt(req.query.page as string) || 1;
+
+      if (!query) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing required parameter: query" });
+      }
+
+      const results = await searchMovieBox(query, page);
+      return res.json({
+        status: 200, success: true, creator: "beratech",
+        result: {
+          query,
+          page,
+          total: results.length,
+          items: results,
+        },
+      });
+    } catch (error: any) {
+      console.error("moviebox/search error:", error?.message);
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "MovieBox search failed" });
+    }
+  });
+
+  // ── goojara info & trending ──────────────────────────────────────────
+  app.get("/api/media/goojara/info/:code", async (req, res) => {
+    try {
+      const code = req.params.code;
+      if (!code || !/^[a-zA-Z0-9]{4,10}$/.test(code)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Invalid goojara movie code" });
+      }
+      const movie = await getGoojaraInfo(code);
+      if (!movie) {
+        return res.status(404).json({ status: 404, success: false, creator: "beratech", error: "Movie not found on Goojara" });
+      }
+      return res.json({ status: 200, success: true, creator: "beratech", result: movie });
+    } catch (error: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Goojara info failed" });
+    }
+  });
+
+  app.get("/api/media/goojara/trending", async (req, res) => {
+    try {
+      const type = ((req.query.type as string) || "movies") as "movies" | "series";
+      const results = await getTrendingGoojara(type);
+      return res.json({
+        status: 200, success: true, creator: "beratech",
+        result: { type, total: results.length, items: results },
+      });
+    } catch (error: any) {
+      return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Goojara trending failed" });
     }
   });
 
