@@ -1825,23 +1825,6 @@ export async function registerRoutes(
       }
 
       const result = await searchMedia(query, type as any, page);
-
-      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
-      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
-      const baseUrl = `${protocol}://${host}`;
-
-      result.results = result.results.map((item: any) => {
-        const dlId = createDownloadId();
-        downloadStore.set(dlId, {
-          externalUrl: item.stream_url,
-          title: item.title,
-          format: "mp4",
-          expiresAt: Date.now() + 10 * 60 * 1000,
-          redirect: true,
-        });
-        return { ...item, download_url: `${baseUrl}/dl/cnv/mp4/${dlId}` };
-      });
-
       return res.json({ status: 200, success: true, creator: "beratech", result });
     } catch (error: any) {
       console.error("media/search error:", error?.message);
@@ -1876,18 +1859,6 @@ export async function registerRoutes(
 
       const media = await streamMedia(query, type as any, episode, season);
 
-      const dlId = createDownloadId();
-      downloadStore.set(dlId, {
-        externalUrl: media.external_url,
-        title: media.title,
-        format: "mp4",
-        expiresAt: Date.now() + 10 * 60 * 1000,
-        redirect: true,
-      });
-      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
-      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
-      const downloadUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
-
       return res.json({
         status: 200, success: true, creator: "beratech",
         result: {
@@ -1902,8 +1873,10 @@ export async function registerRoutes(
           stream_url_alt: media.stream_url_alt,
           magnet_link: media.magnet_link,
           torrent_url: media.torrent_url,
-          message: media.message,
-          download_url: downloadUrl,
+          download_url: media.torrent_url || null,
+          message: media.torrent_url
+            ? "Use torrent_url/.torrent file with a torrent client, or open stream_url to watch"
+            : "No direct download available — open stream_url to watch",
         },
       });
     } catch (error: any) {
