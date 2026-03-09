@@ -756,7 +756,7 @@ export default function Dashboard() {
           <div className="relative shrink-0">
             <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-indigo-500/40" style={{ boxShadow: "0 0 20px rgba(99,102,241,0.3)" }}>
               <img
-                src="https://getshared.com/d/XanlJ5cJ"
+                src="/api/proxy/avatar"
                 alt="Bruce Bera"
                 className="w-full h-full object-cover"
                 onError={(e) => {

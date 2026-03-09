@@ -81,6 +81,20 @@ export async function registerRoutes(
     next();
   });
 
+  app.get("/api/proxy/avatar", async (_req, res) => {
+    try {
+      const upstream = await axios.get(
+        "https://getshared.com/handler/download?action=download&download_id=XanlJ5cJ&private_id=c93bab8509d605563e5914256fa4ba22",
+        { responseType: "stream", timeout: 10000, headers: { "User-Agent": "Mozilla/5.0" } }
+      );
+      res.setHeader("Content-Type", upstream.headers["content-type"] || "image/jpeg");
+      res.setHeader("Cache-Control", "public, max-age=86400");
+      upstream.data.pipe(res);
+    } catch {
+      res.redirect("https://api.dicebear.com/9.x/initials/svg?seed=BB&backgroundColor=6366f1&textColor=ffffff&radius=12");
+    }
+  });
+
   app.get("/api/stats", (_req, res) => {
     const uptimeMs = Date.now() - serverStartTime;
     const uptimeSec = Math.floor(uptimeMs / 1000);
@@ -274,8 +288,8 @@ export async function registerRoutes(
         expiresAt: Date.now() + 10 * 60 * 1000,
       });
 
-      const host = req.get("host") || "bera-api.replit.app";
-      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
       const proxyUrl = `${protocol}://${host}/dl/cnv/mp3/${dlId}`;
 
       return res.json({
@@ -319,8 +333,8 @@ export async function registerRoutes(
         expiresAt: Date.now() + 10 * 60 * 1000,
       });
 
-      const host = req.get("host") || "bera-api.replit.app";
-      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
       const proxyUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
 
       return res.json({
@@ -1764,8 +1778,8 @@ export async function registerRoutes(
         expiresAt: Date.now() + 10 * 60 * 1000,
       });
 
-      const host = req.get("host") || "bera-api.replit.app";
-      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
       const proxyUrl = `${protocol}://${host}/dl/cnv/${format}/${dlId}`;
 
       return res.json({
@@ -1854,8 +1868,8 @@ export async function registerRoutes(
         redirect: true,
       });
 
-      const host = req.get("host") || "bera-api.replit.app";
-      const protocol = req.protocol === "https" || req.get("x-forwarded-proto") === "https" ? "https" : "http";
+      const host = req.get("x-forwarded-host") || req.get("host") || "bera-api.replit.app";
+      const protocol = req.get("x-forwarded-proto") === "https" ? "https" : (req.protocol === "https" ? "https" : "http");
       const downloadUrl = `${protocol}://${host}/dl/cnv/mp4/${dlId}`;
 
       return res.json({
