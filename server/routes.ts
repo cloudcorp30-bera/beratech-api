@@ -28,6 +28,7 @@ import { searchDramas, getDramaInfo, getDramaSeason, getTrendingDramas, getDrama
 import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecentlyUpdated, searchAnilist, getTrendingAnilist, getAnilistInfo, searchNyaa } from "./anime";
 import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
 import { searchMedia, streamMedia } from "./media";
+import { getVidlinkMovieSources, getVidlinkTvSources, getVidlinkAnimeSources } from "./vidlink";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -1834,5 +1835,58 @@ export async function registerRoutes(
     }
   });
 
+
+    // ═══════════════════════════════════════════════════
+    // VIDLINK-STYLE ENDPOINTS — real HLS/MP4 sources via
+    // FlixHQ + HiAnime scrapers, same providers vidlink.pro
+    // uses internally, zero ads.
+    // ═══════════════════════════════════════════════════
+
+    // GET /api/vidlink/movie?id=786892
+    app.get("/api/vidlink/movie", async (req, res) => {
+      const tmdbId = parseInt(req.query.id as string);
+      if (!tmdbId || isNaN(tmdbId)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing or invalid ?id= (TMDB movie ID)" });
+      }
+      try {
+        const result = await getVidlinkMovieSources(tmdbId);
+        return res.json({ status: 200, success: true, creator: "beratech", result });
+      } catch (error: any) {
+        return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Failed to fetch movie sources" });
+      }
+    });
+
+    // GET /api/vidlink/tv?id=94997&season=1&episode=1
+    app.get("/api/vidlink/tv", async (req, res) => {
+      const tmdbId = parseInt(req.query.id as string);
+      const season = parseInt(req.query.season as string) || 1;
+      const episode = parseInt(req.query.episode as string) || 1;
+      if (!tmdbId || isNaN(tmdbId)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing or invalid ?id= (TMDB TV show ID)" });
+      }
+      try {
+        const result = await getVidlinkTvSources(tmdbId, season, episode);
+        return res.json({ status: 200, success: true, creator: "beratech", result });
+      } catch (error: any) {
+        return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Failed to fetch TV sources" });
+      }
+    });
+
+    // GET /api/vidlink/anime?mal_id=21&episode=1&dub=false
+    app.get("/api/vidlink/anime", async (req, res) => {
+      const malId = parseInt(req.query.mal_id as string);
+      const episode = parseInt(req.query.episode as string) || 1;
+      const dub = req.query.dub === "true";
+      if (!malId || isNaN(malId)) {
+        return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Missing or invalid ?mal_id= (MyAnimeList ID)" });
+      }
+      try {
+        const result = await getVidlinkAnimeSources(malId, episode, dub);
+        return res.json({ status: 200, success: true, creator: "beratech", result });
+      } catch (error: any) {
+        return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Failed to fetch anime sources" });
+      }
+    });
+  
   return httpServer;
 }
