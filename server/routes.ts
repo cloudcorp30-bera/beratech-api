@@ -2041,19 +2041,21 @@ export async function registerRoutes(
           const ext   = isHLS ? "m3u8" : "mp4";
           const mime  = isHLS ? "application/vnd.apple.mpegurl" : "video/mp4";
 
-          // Derive Referer from the source URL's origin so CDNs accept the request
-          let referer = "https://flixhq.to/";
-          try {
-            const u = new URL(info.source_url);
-            referer = `${u.protocol}//${u.hostname}/`;
-          } catch (_) {}
+          // Use the Referer/Origin that Consumet captured from the embed player.
+          // These are required by the CDN (e.g. rabbitstream.net, megacloud.tv) to serve the stream.
+          const consumetRef: string =
+            info.stream_headers?.["Referer"] ??
+            info.stream_headers?.["referer"] ??
+            "https://rabbitstream.net/";
+          const consumetOrigin = consumetRef.replace(/\/$/, "").replace(/\/[^\/]*$/, "");
 
           const upstreamHeaders: Record<string, string> = {
+            ...info.stream_headers,   // spread all headers Consumet recommends
             "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
             Accept:            "*/*",
             "Accept-Encoding": "identity",
-            Referer:           referer,
-            Origin:            referer.replace(/\/$/, ""),
+            Referer:           consumetRef,
+            Origin:            consumetOrigin,
           };
           if (req.headers.range) upstreamHeaders["Range"] = req.headers.range as string;
 
