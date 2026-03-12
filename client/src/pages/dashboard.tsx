@@ -74,7 +74,8 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/download/ytmp3": "/api/download/ytmp3?url=https://youtu.be/dQw4w9WgXcQ&quality=128kbps",
   "/api/download/ytmp4": "/api/download/ytmp4?url=https://youtu.be/dQw4w9WgXcQ&quality=720p",
   "/api/download/tiktok": "/api/download/tiktok?url=https://www.tiktok.com/@user/video/1234567890",
-  "/api/download/movie": "/api/download/movie?id=786892",
+  "/api/search/movie": "/api/search/movie?query=Furiosa",
+  "/api/download/movie": "/api/download/movie?query=Furiosa+A+Mad+Max+Saga",
   "/api/search/yts": "/api/search/yts?query=Rick+Astley&limit=5",
   "/api/search/lyrics": "/api/search/lyrics?query=Shape+of+You",
   "/api/search/wiki": "/api/search/wiki?query=Linux",
@@ -168,8 +169,12 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
     { key: "quality", placeholder: "Quality (360p, 720p)", required: false },
   ],
   "/api/download/tiktok": [{ key: "url", placeholder: "TikTok URL", required: true }],
+  "/api/search/movie": [
+    { key: "query", placeholder: "Movie title (e.g. Furiosa, Interstellar)", required: true },
+  ],
   "/api/download/movie": [
-    { key: "id", placeholder: "TMDB movie ID (e.g. 786892 for Furiosa)", required: true },
+    { key: "query", placeholder: "Movie title (e.g. Furiosa, Inception)", required: true },
+    { key: "id", placeholder: "Or use a TMDB ID directly (optional)", required: false },
   ],
   "/api/search/yts": [
     { key: "query", placeholder: "Search term (e.g. Rick Astley)", required: true },
