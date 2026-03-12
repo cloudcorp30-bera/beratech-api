@@ -32,12 +32,13 @@ import { getVidlinkMovieSources, getVidlinkTvSources, getVidlinkAnimeSources } f
 import { fetchMovieSource, fetchMovieSourceByQuery, searchTmdbMovies } from "./moviedl";
 
 interface DownloadEntry {
-  externalUrl: string;
-  title: string;
-  format: "mp3" | "mp4" | "torrent" | "stream";
-  expiresAt: number;
-  redirect?: boolean;
-}
+    externalUrl: string;
+    title: string;
+    format: "mp3" | "mp4" | "torrent" | "stream" | "movie";
+    expiresAt: number;
+    redirect?: boolean;
+    tmdbId?: number;   // movie: lazy-load source at /dl/movie time
+  }
 
 const downloadStore = new Map<string, DownloadEntry>();
 const serverStartTime = Date.now();
@@ -1921,126 +1922,169 @@ export async function registerRoutes(
       }
     });
 
-    app.get("/api/download/movie", async (req, res) => {
-      const query = (req.query.query as string)?.trim();
-      const rawId = req.query.id as string;
-      if (!query && !rawId) {
-        return res.status(400).json({
-          status: 400, success: false, creator: "beratech",
-          error: "Provide ?query=movie+title  — or ?id=tmdb_id for a specific movie"
-        });
-      }
-      try {
-        const info = query
-          ? await fetchMovieSourceByQuery(query)
-          : await fetchMovieSource(parseInt(rawId));
-        const id = createDownloadId();
-        const baseUrl = `${req.protocol}://${req.get("host")}`;
+    // GET /api/download/movie?query=Furiosa  OR  ?id=786892
+      //
+      // Returns TMDB metadata + a lazy stream token immediately (~200ms).
+      // The actual FlixHQ scrape happens inside /dl/movie/:id so CDN tokens
+      // are always freshly signed at click-time, never stale.
+      app.get("/api/download/movie", async (req, res) => {
+        const query = (req.query.query as string)?.trim();
+        const rawId = req.query.id as string;
+        if (!query && !rawId) {
+          return res.status(400).json({
+            status: 400, success: false, creator: "beratech",
+            error: "Provide ?query=movie+title  — or ?id=tmdb_id for a specific movie",
+          });
+        }
+        try {
+          // Resolve TMDB metadata without triggering any scraping (fast, ~200ms)
+          let tmdbId: number;
+          let tmdbTitle: string;
+          let tmdbYear: string | null = null;
+          let tmdbPoster: string | null = null;
+          let tmdbBackdrop: string | null = null;
+          let tmdbOverview: string | null = null;
+          let tmdbRating: number | null = null;
+          const TMDB_KEY = "15d2ea6d0dc1d476efbca3eba2b9bbfb";
 
-        downloadStore.set(id, {
-          externalUrl: info.source_url,
-          title: info.title,
-          format: info.is_m3u8 ? "stream" : "mp4",
-          expiresAt: Date.now() + 10 * 60 * 1000,
-          redirect: false, // always proxy through /dl/movie/:id
-        });
+          if (rawId && !query) {
+            // Direct TMDB ID lookup
+            tmdbId = parseInt(rawId);
+            const metaRes = await axios.get(`https://api.themoviedb.org/3/movie/${tmdbId}`, {
+              params: { api_key: TMDB_KEY }, timeout: 8000,
+            });
+            const m = metaRes.data;
+            tmdbTitle    = m.title;
+            tmdbYear     = m.release_date?.slice(0, 4) ?? null;
+            tmdbPoster   = m.poster_path   ? `https://image.tmdb.org/t/p/w500${m.poster_path}`      : null;
+            tmdbBackdrop = m.backdrop_path ? `https://image.tmdb.org/t/p/original${m.backdrop_path}` : null;
+            tmdbOverview = (m.overview as string)?.slice(0, 300) ?? null;
+            tmdbRating   = m.vote_average ?? null;
+          } else {
+            // Title search → take top TMDB result
+            const results = await searchTmdbMovies(query!);
+            if (!results.length) {
+              return res.status(404).json({ status: 404, success: false, creator: "beratech", error: `No TMDB results for "${query}"` });
+            }
+            const top    = results[0];
+            tmdbId       = top.tmdb_id;
+            tmdbTitle    = top.title;
+            tmdbYear     = top.year;
+            tmdbPoster   = top.poster;
+            tmdbBackdrop = null;
+            tmdbOverview = top.overview;
+            tmdbRating   = top.rating;
+          }
 
-        const streamUrl = `${baseUrl}/dl/movie/${id}`;
-        return res.json({
-          status: 200, success: true, creator: "beratech",
-          result: {
-            tmdb_id: info.tmdb_id,
-            imdb_id: info.imdb_id,
-            title: info.title,
-            year: info.year,
-            quality: info.quality,
-            type: info.source_type.toUpperCase(),
-            poster: info.poster,
-            backdrop: info.backdrop,
-            overview: info.overview,
-            rating: info.rating,
-            subtitles: info.subtitles,
-            all_sources: info.all_sources,
-            message: "Stream/download URL expires in 10 mins",
-            stream_url: streamUrl,
-            download_url: `${streamUrl}?dl=1`,
-          },
-        });
-      } catch (error: any) {
-        return res.status(500).json({
-          status: 500, success: false, creator: "beratech",
-          error: error?.message || "Failed to fetch movie source"
-        });
-      }
-    });
+          // Register lazy token — scraping happens at /dl/movie/:id time so the CDN URL is always fresh
+          const id      = createDownloadId();
+          const baseUrl = `${req.protocol}://${req.get("host")}`;
+          downloadStore.set(id, {
+            externalUrl: "",           // filled lazily at proxy time
+            title:       tmdbTitle,
+            format:      "movie",
+            expiresAt:   Date.now() + 15 * 60 * 1000,  // 15-min click window
+            tmdbId,
+          });
 
-    // GET /dl/movie/:id          → streams inline (for players)
-    // GET /dl/movie/:id?dl=1     → forces download attachment
-    app.get("/dl/movie/:id", async (req, res) => {
-      try {
+          const streamUrl = `${baseUrl}/dl/movie/${id}`;
+          return res.json({
+            status: 200, success: true, creator: "beratech",
+            result: {
+              tmdb_id:      tmdbId,
+              title:        tmdbTitle,
+              year:         tmdbYear,
+              poster:       tmdbPoster,
+              backdrop:     tmdbBackdrop,
+              overview:     tmdbOverview,
+              rating:       tmdbRating,
+              message:      "Stream/download URL is valid for 15 minutes",
+              stream_url:   streamUrl,
+              download_url: `${streamUrl}?dl=1`,
+              hint:         "Open stream_url in a video player to stream. Add ?dl=1 to download the file.",
+            },
+          });
+        } catch (error: any) {
+          return res.status(500).json({
+            status: 500, success: false, creator: "beratech",
+            error: error?.message || "Failed to resolve movie",
+          });
+        }
+      });
+
+    // GET /dl/movie/:id          → streams inline (for players / VLC / browser)
+      // GET /dl/movie/:id?dl=1     → forces download attachment
+      //
+      // Source is scraped HERE at click-time so CDN tokens are always fresh.
+      app.get("/dl/movie/:id", async (req, res) => {
         const { id } = req.params;
         const forceDownload = req.query.dl === "1";
         const entry = downloadStore.get(id);
 
         if (!entry) {
-          return res.status(404).json({
-            status: 404, success: false, creator: "beratech",
-            error: "Stream link expired or not found"
-          });
+          return res.status(404).json({ status: 404, success: false, creator: "beratech", error: "Stream link expired or not found" });
         }
         if (entry.expiresAt < Date.now()) {
           downloadStore.delete(id);
-          return res.status(410).json({
-            status: 410, success: false, creator: "beratech",
-            error: "Stream link has expired"
+          return res.status(410).json({ status: 410, success: false, creator: "beratech", error: "Stream link has expired" });
+        }
+        if (entry.format !== "movie" || !entry.tmdbId) {
+          return res.status(400).json({ status: 400, success: false, creator: "beratech", error: "Invalid token type for this route" });
+        }
+
+        try {
+          // Scrape fresh source right now — CDN URL is always freshly signed
+          const info = await fetchMovieSource(entry.tmdbId);
+
+          const safeTitle = info.title.replace(/[^\w\s\-().]/g, "").trim() || "movie";
+          const isHLS = info.is_m3u8;
+          const ext   = isHLS ? "m3u8" : "mp4";
+          const mime  = isHLS ? "application/vnd.apple.mpegurl" : "video/mp4";
+
+          // Derive Referer from the source URL's origin so CDNs accept the request
+          let referer = "https://flixhq.to/";
+          try {
+            const u = new URL(info.source_url);
+            referer = `${u.protocol}//${u.hostname}/`;
+          } catch (_) {}
+
+          const upstreamHeaders: Record<string, string> = {
+            "User-Agent":      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+            Accept:            "*/*",
+            "Accept-Encoding": "identity",
+            Referer:           referer,
+            Origin:            referer.replace(/\/$/, ""),
+          };
+          if (req.headers.range) upstreamHeaders["Range"] = req.headers.range as string;
+
+          const upstream = await axios.get(info.source_url, {
+            responseType: "stream",
+            timeout:       300_000,
+            maxRedirects:  10,
+            headers:       upstreamHeaders,
           });
-        }
 
-        const isHLS = entry.format === "stream";
-        const safeTitle = entry.title.replace(/[^\w\s\-().]/g, "").trim() || "movie";
-        const ext = isHLS ? "m3u8" : "mp4";
-        const mime = isHLS ? "application/vnd.apple.mpegurl" : "video/mp4";
+          res.setHeader("Content-Type",        mime);
+          res.setHeader("Content-Disposition", `${forceDownload ? "attachment" : "inline"}; filename="${safeTitle}.${ext}"`);
+          res.setHeader("Accept-Ranges",       "bytes");
+          res.setHeader("Access-Control-Allow-Origin", "*");
+          if (upstream.headers["content-length"]) res.setHeader("Content-Length", upstream.headers["content-length"]);
+          if (upstream.headers["content-range"])  {
+            res.setHeader("Content-Range", upstream.headers["content-range"]);
+            res.status(206);
+          }
 
-        const upstreamHeaders: Record<string, string> = {
-          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-          Accept: "*/*",
-          "Accept-Encoding": "identity",
-        };
-        if (req.headers.range) {
-          upstreamHeaders["Range"] = req.headers.range;
+          upstream.data.pipe(res);
+        } catch (error: any) {
+          console.error("Movie stream error:", error?.message);
+          if (!res.headersSent) {
+            return res.status(500).json({
+              status: 500, success: false, creator: "beratech",
+              error: error?.message || "Stream fetch failed — source may be geo-restricted or temporarily unavailable",
+            });
+          }
         }
-
-        const upstream = await axios.get(entry.externalUrl, {
-          responseType: "stream",
-          timeout: 300_000,
-          headers: upstreamHeaders,
-        });
-
-        res.setHeader("Content-Type", mime);
-        res.setHeader(
-          "Content-Disposition",
-          `${forceDownload ? "attachment" : "inline"}; filename="${safeTitle}.${ext}"`
-        );
-        res.setHeader("Accept-Ranges", "bytes");
-        if (upstream.headers["content-length"]) {
-          res.setHeader("Content-Length", upstream.headers["content-length"]);
-        }
-        if (upstream.headers["content-range"]) {
-          res.setHeader("Content-Range", upstream.headers["content-range"]);
-          res.status(206);
-        }
-
-        upstream.data.pipe(res);
-      } catch (error: any) {
-        console.error("Movie proxy error:", error?.message);
-        if (!res.headersSent) {
-          return res.status(500).json({
-            status: 500, success: false, creator: "beratech",
-            error: "Stream proxy failed"
-          });
-        }
-      }
-    });
+      });
   
   return httpServer;
 }
