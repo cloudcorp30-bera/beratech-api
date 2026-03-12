@@ -21,6 +21,7 @@ import axios from "axios";
     rating: number | null;
     subtitles: any[];
     all_sources: any[];
+    stream_headers: Record<string, string>;
   }
 
   const QUALITY_ORDER = ["1080p", "720p", "480p", "360p", "auto"];
@@ -80,6 +81,7 @@ import axios from "axios";
     const sourceData = await flixhq.fetchEpisodeSources(episode.id, match.id);
     const sources: any[] = (sourceData as any).sources ?? [];
     const subtitles: any[] = (sourceData as any).subtitles ?? [];
+    const consumetHeaders: Record<string, string> = (sourceData as any).headers ?? {};
 
     if (sources.length === 0) {
       throw new Error(`Source list is empty for "${title}"`);
@@ -110,6 +112,7 @@ import axios from "axios";
       overview: (movie.overview as string)?.slice(0, 300) ?? null,
       rating: movie.vote_average ?? null,
       subtitles,
+      stream_headers: consumetHeaders,
       all_sources: sources.map((s: any) => ({
         url: s.url,
         quality: s.quality ?? "unknown",
