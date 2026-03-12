@@ -29,6 +29,7 @@ import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecent
 import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
 import { searchMedia, streamMedia } from "./media";
 import { getVidlinkMovieSources, getVidlinkTvSources, getVidlinkAnimeSources } from "./vidlink";
+import { fetchMovieSource } from "./moviedl";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -128,6 +129,7 @@ export async function registerRoutes(
             { path: "/api/download/ytmp3", method: "GET", description: "YouTube to MP3" },
             { path: "/api/download/ytmp4", method: "GET", description: "YouTube to MP4" },
             { path: "/api/download/tiktok", method: "GET", description: "TikTok Download" },
+            { path: "/api/download/movie", method: "GET", description: "Movie stream/download via own server URL (TMDB ID)" },
           ],
           search: [
             { path: "/api/search/yts", method: "GET", description: "YouTube Search" },
@@ -1890,6 +1892,132 @@ export async function registerRoutes(
         return res.json({ status: 200, success: true, creator: "beratech", result });
       } catch (error: any) {
         return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Failed to fetch anime sources" });
+      }
+    });
+  
+
+    // ═══════════════════════════════════════════════════════════════
+    // MOVIE DOWNLOAD — same token proxy pattern as ytmp3/ytmp4.
+    //   FlixHQ (Consumet) scrapes the real source, we register
+    //   a short-lived token and stream/proxy through our own URL.
+    // ═══════════════════════════════════════════════════════════════
+
+    // GET /api/download/movie?id=786892
+    app.get("/api/download/movie", async (req, res) => {
+      const tmdbId = parseInt(req.query.id as string);
+      if (!tmdbId || isNaN(tmdbId)) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: "Missing or invalid ?id= (TMDB movie ID, e.g. 786892)"
+        });
+      }
+      try {
+        const info = await fetchMovieSource(tmdbId);
+        const id = createDownloadId();
+        const baseUrl = `${req.protocol}://${req.get("host")}`;
+
+        downloadStore.set(id, {
+          externalUrl: info.source_url,
+          title: info.title,
+          format: info.is_m3u8 ? "stream" : "mp4",
+          expiresAt: Date.now() + 10 * 60 * 1000,
+          redirect: false, // always proxy through /dl/movie/:id
+        });
+
+        const streamUrl = `${baseUrl}/dl/movie/${id}`;
+        return res.json({
+          status: 200, success: true, creator: "beratech",
+          result: {
+            tmdb_id: info.tmdb_id,
+            imdb_id: info.imdb_id,
+            title: info.title,
+            year: info.year,
+            quality: info.quality,
+            type: info.source_type.toUpperCase(),
+            poster: info.poster,
+            backdrop: info.backdrop,
+            overview: info.overview,
+            rating: info.rating,
+            subtitles: info.subtitles,
+            all_sources: info.all_sources,
+            message: "Stream/download URL expires in 10 mins",
+            stream_url: streamUrl,
+            download_url: `${streamUrl}?dl=1`,
+          },
+        });
+      } catch (error: any) {
+        return res.status(500).json({
+          status: 500, success: false, creator: "beratech",
+          error: error?.message || "Failed to fetch movie source"
+        });
+      }
+    });
+
+    // GET /dl/movie/:id          → streams inline (for players)
+    // GET /dl/movie/:id?dl=1     → forces download attachment
+    app.get("/dl/movie/:id", async (req, res) => {
+      try {
+        const { id } = req.params;
+        const forceDownload = req.query.dl === "1";
+        const entry = downloadStore.get(id);
+
+        if (!entry) {
+          return res.status(404).json({
+            status: 404, success: false, creator: "beratech",
+            error: "Stream link expired or not found"
+          });
+        }
+        if (entry.expiresAt < Date.now()) {
+          downloadStore.delete(id);
+          return res.status(410).json({
+            status: 410, success: false, creator: "beratech",
+            error: "Stream link has expired"
+          });
+        }
+
+        const isHLS = entry.format === "stream";
+        const safeTitle = entry.title.replace(/[^\w\s\-().]/g, "").trim() || "movie";
+        const ext = isHLS ? "m3u8" : "mp4";
+        const mime = isHLS ? "application/vnd.apple.mpegurl" : "video/mp4";
+
+        const upstreamHeaders: Record<string, string> = {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
+          Accept: "*/*",
+          "Accept-Encoding": "identity",
+        };
+        if (req.headers.range) {
+          upstreamHeaders["Range"] = req.headers.range;
+        }
+
+        const upstream = await axios.get(entry.externalUrl, {
+          responseType: "stream",
+          timeout: 300_000,
+          headers: upstreamHeaders,
+        });
+
+        res.setHeader("Content-Type", mime);
+        res.setHeader(
+          "Content-Disposition",
+          `${forceDownload ? "attachment" : "inline"}; filename="${safeTitle}.${ext}"`
+        );
+        res.setHeader("Accept-Ranges", "bytes");
+        if (upstream.headers["content-length"]) {
+          res.setHeader("Content-Length", upstream.headers["content-length"]);
+        }
+        if (upstream.headers["content-range"]) {
+          res.setHeader("Content-Range", upstream.headers["content-range"]);
+          res.status(206);
+        }
+
+        upstream.data.pipe(res);
+      } catch (error: any) {
+        console.error("Movie proxy error:", error?.message);
+        if (!res.headersSent) {
+          return res.status(500).json({
+            status: 500, success: false, creator: "beratech",
+            error: "Stream proxy failed"
+          });
+        }
       }
     });
   
