@@ -29,6 +29,7 @@ import {
   Twitter,
   Star,
   Cpu,
+  Film,
 } from "lucide-react";
 
 interface EndpointInfo {
@@ -66,6 +67,7 @@ const CATEGORY_META: Record<string, { icon: typeof Download; label: string; grad
   location:  { icon: MapPin,   label: "Location",            gradient: "from-green-500/20 to-lime-500/10",   border: "border-green-500/30",  badge: "bg-green-500/15 text-green-400 border-green-500/30" },
   utilities: { icon: Settings, label: "Utilities",           gradient: "from-orange-500/20 to-amber-500/10", border: "border-orange-500/30", badge: "bg-orange-500/15 text-orange-400 border-orange-500/30" },
   ephoto360: { icon: Sparkles, label: "EPhoto360 Effects",   gradient: "from-purple-500/20 to-fuchsia-500/10",border: "border-purple-500/30",badge: "bg-purple-500/15 text-purple-400 border-purple-500/30" },
+  stream:    { icon: Film,     label: "Stream Sources",      gradient: "from-pink-500/20 to-rose-500/10",     border: "border-pink-500/30",   badge: "bg-pink-500/15 text-pink-400 border-pink-500/30" },
 };
 
 const EXAMPLE_URLS: Record<string, string> = {
@@ -150,6 +152,9 @@ const EXAMPLE_URLS: Record<string, string> = {
   "/api/utils/gitignore": "/api/utils/gitignore?templates=node,python",
   "/api/utils/metadata": "/api/utils/metadata?url=https://github.com",
   "/api/utils/uptime": "/api/utils/uptime?url=https://google.com",
+  "/api/vidlink/movie": "/api/vidlink/movie?id=786892",
+  "/api/vidlink/tv": "/api/vidlink/tv?id=94997&season=1&episode=1",
+  "/api/vidlink/anime": "/api/vidlink/anime?mal_id=21&episode=1&dub=false",
 };
 
 const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; required: boolean }>> = {
@@ -385,6 +390,19 @@ const STATIC_PARAMS: Record<string, Array<{ key: string; placeholder: string; re
   "/api/utils/gitignore": [{ key: "templates", placeholder: "Templates (e.g. node,python,vscode)", required: true }],
   "/api/utils/metadata": [{ key: "url", placeholder: "Website URL to scrape metadata from", required: true }],
   "/api/utils/uptime": [{ key: "url", placeholder: "URL to check (e.g. https://google.com)", required: true }],
+  "/api/vidlink/movie": [
+      { key: "id", placeholder: "TMDB movie ID (e.g. 786892 for Furiosa)", required: true },
+    ],
+    "/api/vidlink/tv": [
+      { key: "id", placeholder: "TMDB TV show ID (e.g. 94997 for House of the Dragon)", required: true },
+      { key: "season", placeholder: "Season number (default: 1)", required: false },
+      { key: "episode", placeholder: "Episode number (default: 1)", required: false },
+    ],
+    "/api/vidlink/anime": [
+      { key: "mal_id", placeholder: "MyAnimeList ID (e.g. 21 for One Piece)", required: true },
+      { key: "episode", placeholder: "Episode number (default: 1)", required: false },
+      { key: "dub", placeholder: "Prefer dubbed? true/false (default: false)", required: false },
+    ],
 };
 
 function getEndpointParams(ep: EndpointInfo): Array<{ key: string; placeholder: string; required: boolean }> {
