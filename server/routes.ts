@@ -227,6 +227,11 @@ export async function registerRoutes(
               text_inputs: e.textInputs,
             })),
           ],
+          stream: [
+              { path: "/api/vidlink/movie", method: "GET", description: "Movie stream sources (HLS/MP4) + 7 embed fallbacks" },
+              { path: "/api/vidlink/tv", method: "GET", description: "TV episode stream sources (HLS/MP4) + 8 embed fallbacks" },
+              { path: "/api/vidlink/anime", method: "GET", description: "Anime stream sources sub/dub (HLS) + embed fallbacks" },
+            ],
         },
       },
     });
