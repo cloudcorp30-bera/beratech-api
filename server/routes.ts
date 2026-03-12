@@ -29,7 +29,7 @@ import { searchAnime, getAnimeSpotlight, getTopAiring, getMostPopular, getRecent
 import { getEpisodeStreamUrls, searchJikanAnime, getJikanAnimeInfo, getJikanAnimeEpisodes, getJikanTopAnime, getJikanSeasonNow } from "./episode";
 import { searchMedia, streamMedia } from "./media";
 import { getVidlinkMovieSources, getVidlinkTvSources, getVidlinkAnimeSources } from "./vidlink";
-import { fetchMovieSource } from "./moviedl";
+import { fetchMovieSource, fetchMovieSourceByQuery, searchTmdbMovies } from "./moviedl";
 
 interface DownloadEntry {
   externalUrl: string;
@@ -129,7 +129,8 @@ export async function registerRoutes(
             { path: "/api/download/ytmp3", method: "GET", description: "YouTube to MP3" },
             { path: "/api/download/ytmp4", method: "GET", description: "YouTube to MP4" },
             { path: "/api/download/tiktok", method: "GET", description: "TikTok Download" },
-            { path: "/api/download/movie", method: "GET", description: "Movie stream/download via own server URL (TMDB ID)" },
+            { path: "/api/search/movie", method: "GET", description: "Search movies by title — returns TMDB matches" },
+            { path: "/api/download/movie", method: "GET", description: "Movie stream/download via own server URL (search by title or TMDB ID)" },
           ],
           search: [
             { path: "/api/search/yts", method: "GET", description: "YouTube Search" },
@@ -1903,16 +1904,36 @@ export async function registerRoutes(
     // ═══════════════════════════════════════════════════════════════
 
     // GET /api/download/movie?id=786892
-    app.get("/api/download/movie", async (req, res) => {
-      const tmdbId = parseInt(req.query.id as string);
-      if (!tmdbId || isNaN(tmdbId)) {
+    // GET /api/search/movie?query=Furiosa — search without downloading
+    app.get("/api/search/movie", async (req, res) => {
+      const query = (req.query.query as string)?.trim();
+      if (!query) {
         return res.status(400).json({
           status: 400, success: false, creator: "beratech",
-          error: "Missing or invalid ?id= (TMDB movie ID, e.g. 786892)"
+          error: "Missing ?query= (movie title to search)"
         });
       }
       try {
-        const info = await fetchMovieSource(tmdbId);
+        const results = await searchTmdbMovies(query);
+        return res.json({ status: 200, success: true, creator: "beratech", result: { query, results } });
+      } catch (error: any) {
+        return res.status(500).json({ status: 500, success: false, creator: "beratech", error: error?.message || "Search failed" });
+      }
+    });
+
+    app.get("/api/download/movie", async (req, res) => {
+      const query = (req.query.query as string)?.trim();
+      const rawId = req.query.id as string;
+      if (!query && !rawId) {
+        return res.status(400).json({
+          status: 400, success: false, creator: "beratech",
+          error: "Provide ?query=movie+title  — or ?id=tmdb_id for a specific movie"
+        });
+      }
+      try {
+        const info = query
+          ? await fetchMovieSourceByQuery(query)
+          : await fetchMovieSource(parseInt(rawId));
         const id = createDownloadId();
         const baseUrl = `${req.protocol}://${req.get("host")}`;
 
